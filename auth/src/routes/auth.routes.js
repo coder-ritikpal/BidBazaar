@@ -1,9 +1,20 @@
 import express from "express";
-import { registerUser } from "../controllers/auth.controller.js";
+import * as authController from  "../controllers/auth.controller.js";
 import * as validationMiddleware from "../middlewares/validation.middleware.js";
+import passport from "passport";
 
 const router = express.Router();
 
-router.post("/register", validationMiddleware.registerUserValidationRules, registerUser);
+router.post("/register", validationMiddleware.registerUserValidationRules,authController.registerUser);
+
+router.get('/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
+);
+
+// Callback route that Google will redirect to after authentication
+router.get('/google/callback',
+  passport.authenticate('google', { session: false }),
+  authController.googleAuthCallback
+);
 
 export default router;
