@@ -1,10 +1,13 @@
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
+import { connectRabbitMQ } from './src/broker/rabbit.js';
 
-const PORT = process.env.PORT || 3000;
+ connectRabbitMQ();
 
-connectDB();
-
+ connectDB();
+ 
+ const PORT = process.env.PORT || 3000;
+ 
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Auth server is running on port ${PORT}`);
 });
