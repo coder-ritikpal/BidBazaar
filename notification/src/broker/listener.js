@@ -10,7 +10,7 @@ function startListener() {
 
     const template = `
   <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-    <h1>🎉 Welcome  ${firstName} ${lastName}! 🎉</h1>
+    <h1>🎉 HI  ${firstName} ${lastName}! 🎉</h1>
 
     <p>We’re thrilled to have you join the BidBazaar community!</p>
 

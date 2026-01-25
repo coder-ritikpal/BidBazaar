@@ -91,6 +91,12 @@ export async function googleAuthCallback(req, res) {
       }
     });
 
+    await publishToQueue("user_registration", {
+      id: newUser._id,
+      email: newUser.email,
+      fullName: newUser.fullName,
+    });
+
     const token = jwt.sign({ id: newUser._id }, config.JWT_SECRET, { expiresIn: "1h" });
     res.cookie("token", token);
 
