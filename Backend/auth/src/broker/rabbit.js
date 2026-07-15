@@ -14,6 +14,10 @@ export async function connectRabbitMQ(){
 }
 
 export  async function publishToQueue(queueName, data){
+    if (!channel) {
+        console.warn("RabbitMQ channel not available. Skipping message publication.");
+        return;
+    }
     await channel.assertQueue(queueName,{durable:true});
     await channel.sendToQueue(queueName,Buffer.from(JSON.stringify(data)));
     console.log("Message sent to queue:",queueName);

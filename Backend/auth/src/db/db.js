@@ -3,7 +3,13 @@ import config from "../config/config.js";
 
 async function connectDB() {
   try {
-    await mongoose.connect(config.MONGODB_URI);
+    const uri =
+      process.env.NODE_ENV === "test"
+        ? process.env.MONGO_URI   
+        : config.MONGODB_URI;     
+
+    await mongoose.connect(uri, { bufferCommands: false });
+
     console.log("Connected to MongoDB");
   } catch (error) {
     console.error("Error connecting to MongoDB:", error);
@@ -12,3 +18,5 @@ async function connectDB() {
 }
 
 export default connectDB;
+
+export { mongoose };

@@ -1,20 +1,33 @@
-import express from "express";
-import * as authController from  "../controllers/auth.controller.js";
-import * as validationMiddleware from "../middlewares/validation.middleware.js";
-import passport from "passport";
+import express from 'express';
+import passport from 'passport'; 
+import {
+  registerUser,
+  loginUser,
+  logoutUser,
+  googleAuthCallback,
+  getMe, // Import the new getMe function
+  getUserPublicProfile,
+  updateProfile,
+} from '../controllers/auth.controller.js';
+import { protect } from '../middlewares/auth.middleware.js'; 
+import { authLimiter } from '../middlewares/rateLimit.middleware.js';
+import { registerUserValidationRules } from '../middlewares/validation.middleware.js';
 
 const router = express.Router();
 
-router.post("/register", validationMiddleware.registerUserValidationRules,authController.registerUser);
+router.post('/register', authLimiter, registerUserValidationRules, registerUser);
+router.post('/login', authLimiter, loginUser);
+router.post('/logout', authLimiter, logoutUser);
 
-router.get('/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+// Google OAuth routes
+router.get('/google', passport.authenticate('google', {
+  scope: ['profile', 'email'],
+  callbackURL: `http://localhost:3000/api/auth/google/callback` // Google should redirect to auth service's own callback
+}));
+router.get('/google/callback', passport.authenticate('google',{session: false,failureRedirect: '/login' }), googleAuthCallback);
 
-// Callback route that Google will redirect to after authentication
-router.get('/google/callback',
-  passport.authenticate('google', { session: false }),
-  authController.googleAuthCallback
-);
+router.get('/me', protect, getMe); // Protected route to get current user details
+router.put('/me', protect, updateProfile); // Protected route to update current user details
+router.get('/users/:userId', getUserPublicProfile); // Public route (name only)
 
 export default router;
