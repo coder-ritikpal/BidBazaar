@@ -1,15 +1,15 @@
 import { jest } from '@jest/globals';
 
 // 🔹 mock queue (safe)
-await jest.unstable_mockModule('../src/broker/rabbit.js', () => ({
+await jest.unstable_mockModule('../../src/broker/rabbit.js', () => ({
   publishToQueue: jest.fn(),
 }));
 
 // 🔹 setup first
-import '../test/setup.js';
+import '../../test/setup.js';
 
 import request from 'supertest';
-import app from '../src/app.js';
+import app from '../../src/app.js';
 
 describe('Auth - Logout', () => {
 

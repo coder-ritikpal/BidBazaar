@@ -1,14 +1,14 @@
 import { jest } from "@jest/globals";
 
 // Mock RabbitMQ
-await jest.unstable_mockModule("../src/broker/rabbit.js", () => ({
+await jest.unstable_mockModule("../../src/broker/rabbit.js", () => ({
   publishToQueue: jest.fn(),
 }));
 
-import "../test/setup.js";
+import "../../test/setup.js"
 
 import request from "supertest";
-import app from "../src/app.js";
+import app from "../../src/app.js";
 
 describe("Auth E2E", () => {
   const user = {

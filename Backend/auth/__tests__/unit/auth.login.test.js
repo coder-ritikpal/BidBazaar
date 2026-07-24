@@ -1,19 +1,19 @@
 import { jest } from '@jest/globals';
 
 // 🔹 mock queue (not needed here but safe)
-await jest.unstable_mockModule('../src/broker/rabbit.js', () => ({
+await jest.unstable_mockModule('../../src/broker/rabbit.js', () => ({
   publishToQueue: jest.fn(),
 }));
 
 // 🔹 ensure setup runs
-import '../test/setup.js';
+import '../../test/setup.js';
 
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import app from '../src/app.js';
-import userModel from '../src/models/user.model.js';
-import config from '../src/config/config.js';
+import app from '../../src/app.js';
+import userModel from '../../src/models/user.model.js';
+import config from '../../src/config/config.js';
 
 describe('Auth - Login', () => {
   const userData = {

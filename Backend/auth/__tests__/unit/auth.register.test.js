@@ -6,19 +6,19 @@ jest.setTimeout(30000);
 // 🔹 mock BEFORE imports
 const mockPublish = jest.fn();
 
-await jest.unstable_mockModule('../src/broker/rabbit.js', () => ({
+await jest.unstable_mockModule('../../src/broker/rabbit.js', () => ({
   publishToQueue: mockPublish,
 }));
 
 // 🔹 IMPORTANT: ensure DB setup runs first
-import '../test/setup.js';
+import '../../test/setup.js';
 
 // 🔹 now import rest
 import request from 'supertest';
 import jwt from 'jsonwebtoken';
-import app from '../src/app.js';
-import userModel from '../src/models/user.model.js';
-import config from '../src/config/config.js';
+import app from '../../src/app.js';
+import userModel from '../../src/models/user.model.js';
+import config from '../../src/config/config.js';
 
 describe('Auth - Register', () => {
   const userData = {

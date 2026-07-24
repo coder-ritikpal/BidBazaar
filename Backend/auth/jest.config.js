@@ -5,6 +5,6 @@ export default {
   ...base,
   displayName: 'auth',
   rootDir: '.',
-  testMatch: ['<rootDir>/__tests__/**/*.test.js', ],
+  testMatch: ['<rootDir>/__tests__/unit/**/*.test.js', ],
   setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
 };
