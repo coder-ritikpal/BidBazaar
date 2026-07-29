@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Ensure JSX is correctly processed for React components
+    "jsx": "react-jsx",
+    // Define the JavaScript libraries available in the global scope
+    "lib": ["DOM", "DOM.Iterable", "ESNext"]
+  },
+  // Include all JavaScript and JSX files within the 'src' directory
+  "include": ["src/**/*.js", "src/**/*.jsx","src/**/*.json"],
+  // Exclude common directories that don't contain application source code
+  "exclude": ["node_modules", "dist"]
+}
