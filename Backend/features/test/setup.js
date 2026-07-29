@@ -1,36 +1,35 @@
 import { jest } from '@jest/globals';
-process.env.JWT_SECRET = 'test_jwt_secret';
-process.env.NODE_ENV = 'test';
-
-jest.spyOn(console, 'log').mockImplementation(() => {});
-jest.spyOn(console, 'warn').mockImplementation(() => {});
-jest.spyOn(console, 'error').mockImplementation(() => {});
-
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import connectDB from '../src/db/db.js';// adjust path
+import { resetAllMocks } from '../../test-config/mocks.js';
+import '../../test-config/setup.common.js';
 
 let mongo;
 
 beforeAll(async () => {
+  // Start the in-memory server and set the MONGO_URI environment variable.
   mongo = await MongoMemoryServer.create();
   const uri = mongo.getUri();
-
   process.env.MONGO_URI = uri;
-  process.env.JWT_SECRET = 'test_jwt_secret';
-
-  await connectDB(); // ✅ use same connection logic
+  // Explicitly connect Mongoose here to ensure the connection is ready before tests run.
+  await mongoose.connect(uri);
 });
 
 afterEach(async () => {
-  const collections = await mongoose.connection.db.collections();
-
-  for (let collection of collections) {
-    await collection.deleteMany({});
+  // Clear all collections after each test
+  if (mongoose.connection.db) {
+    const collections = await mongoose.connection.db.collections();
+    for (let collection of collections) {
+      await collection.deleteMany({});
+    }
   }
+  // Reset any other mocks you might have
+  resetAllMocks();
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
-  if (mongo) await mongo.stop();
+  if (mongo) {
+    await mongoose.disconnect();
+    await mongo.stop();
+  }
 });

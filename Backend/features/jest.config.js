@@ -4,6 +4,7 @@ export default {
   ...base,
   displayName: 'features',
   rootDir: '.',
-  testMatch: ['<rootDir>/__tests__/**/*.test.js'],
+  testMatch: ['<rootDir>/__tests__/unit/**/*.test.js'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
+  "testRunner": "jest-circus/runner",
 };
