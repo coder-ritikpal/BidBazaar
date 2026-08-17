@@ -14,5 +14,11 @@ export default {
     
     '<rootDir>/features/jest.config.js',
     '<rootDir>/features/jest.e2e.config.js',
+
+    '<rootDir>/cart/jest.config.js',
+    '<rootDir>/cart/jest.e2e.config.js',
+
+    '<rootDir>/dashboard/jest.config.js',
+    '<rootDir>/dashboard/jest.e2e.config.js',
   ],
 };
