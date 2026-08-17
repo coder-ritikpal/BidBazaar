@@ -16,9 +16,8 @@ jest.unstable_mockModule("../../../src/models/bid.model.js", () => ({
   },
 }));
 
-const { auctionBid } = await import(
-  "../../../src/controllers/auction.controller.js"
-);
+const { auctionBid } =
+  await import("../../../src/controllers/auction.controller.js");
 
 describe("auctionBid", () => {
   let req, res;
@@ -26,21 +25,31 @@ describe("auctionBid", () => {
   const sellerId = new mongoose.Types.ObjectId().toHexString();
   const bidderId = new mongoose.Types.ObjectId().toHexString();
 
+  const mockEmit = jest.fn();
+  const mockIo = {
+    to: jest.fn(),
+  };
   beforeEach(() => {
     jest.clearAllMocks();
+
+    mockIo.to.mockReturnValue({
+      emit: mockEmit,
+    });
+
     req = {
       params: { auctionId },
       body: { amount: 1500 },
       user: { id: bidderId },
-      app: { get: jest.fn() }, // Mock for socket.io
+      app: {
+        get: jest.fn().mockReturnValue(mockIo),
+      },
     };
+
     res = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
-    jest.spyOn(mongoose.Types.ObjectId, "isValid").mockReturnValue(true);
   });
-
   const liveAuction = {
     _id: new mongoose.Types.ObjectId(auctionId),
     sellerId: sellerId,
@@ -53,7 +62,11 @@ describe("auctionBid", () => {
   };
 
   it("should place a bid successfully", async () => {
-    const auction = { ...liveAuction, bids: [], save: jest.fn().mockResolvedValue(true) };
+    const auction = {
+      ...liveAuction,
+      bids: [],
+      save: jest.fn().mockResolvedValue(true),
+    };
     findByIdMock.mockResolvedValue(auction);
     bidCreateMock.mockResolvedValue({ _id: "bid123", bidderId, amount: 1500 });
 
@@ -69,8 +82,34 @@ describe("auctionBid", () => {
     expect(auction.currentPrice).toBe(1500);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Bid placed successfully." })
+      expect.objectContaining({ message: "Bid placed successfully." }),
     );
+  });
+
+  it("should emit a socket event on successful bid", async () => {
+    const auction = {
+      ...liveAuction,
+      bids: [],
+      save: jest.fn().mockResolvedValue(true),
+    };
+    const newBid = {
+      _id: "bid123",
+      bidderId,
+      amount: 1500,
+    };
+    findByIdMock.mockResolvedValue(auction);
+    bidCreateMock.mockResolvedValue(newBid);
+
+    await auctionBid(req, res);
+
+    expect(req.app.get).toHaveBeenCalledWith("io");
+    expect(mockIo.to).toHaveBeenCalledWith(auctionId);
+
+    expect(mockEmit).toHaveBeenCalledWith("new_bid", {
+      auctionId,
+      currentPrice: 1500,
+      bid: newBid,
+    });
   });
 
   it("should return 401 if user is not logged in", async () => {
@@ -104,7 +143,10 @@ describe("auctionBid", () => {
 
   it("should return 403 if seller bids on their own auction", async () => {
     req.user.id = sellerId;
-    const auction = { ...liveAuction, sellerId: new mongoose.Types.ObjectId(sellerId) };
+    const auction = {
+      ...liveAuction,
+      sellerId: new mongoose.Types.ObjectId(sellerId),
+    };
     findByIdMock.mockResolvedValue(auction);
     await auctionBid(req, res);
     expect(res.status).toHaveBeenCalledWith(403);

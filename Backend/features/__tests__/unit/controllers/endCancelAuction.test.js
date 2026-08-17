@@ -47,7 +47,6 @@ describe("endAuction & cancelAuction", () => {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
-    jest.spyOn(mongoose.Types.ObjectId, "isValid").mockReturnValue(true);
   });
 
   describe("endAuction", () => {

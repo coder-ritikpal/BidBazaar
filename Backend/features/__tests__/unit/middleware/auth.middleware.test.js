@@ -151,5 +151,19 @@ describe("authMiddleware", () => {
 
       expect(next).not.toHaveBeenCalled();
     });
+
+    it("should return 401 for malformed Authorization header", () => {
+      req.headers.authorization = "Basic some-other-token";
+
+      authMiddleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+
+      expect(res.json).toHaveBeenCalledWith({
+        message: "Unauthorized: No token provided",
+      });
+
+      expect(next).not.toHaveBeenCalled();
+    });
   });
 });

@@ -28,7 +28,6 @@ describe("getBidsForAuction", () => {
       json: jest.fn(),
     };
     findMock.mockReturnValue({ sort: sortMock });
-    jest.spyOn(mongoose.Types.ObjectId, "isValid").mockReturnValue(true);
   });
 
   it("should fetch bids for an auction successfully", async () => {

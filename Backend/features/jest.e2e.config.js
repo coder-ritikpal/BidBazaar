@@ -7,5 +7,5 @@ export default {
   testMatch: ["<rootDir>/__tests__/e2e/**/*.test.js"],
   setupFilesAfterEnv: ["<rootDir>/test/setup.js"],
   // This is crucial to prevent race conditions between test files using the same DB setup.
-//   maxWorkers: 1,
+  maxWorkers: 1,
 };
