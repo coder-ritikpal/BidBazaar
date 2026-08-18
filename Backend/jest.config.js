@@ -20,5 +20,8 @@ export default {
 
     '<rootDir>/dashboard/jest.config.js',
     '<rootDir>/dashboard/jest.e2e.config.js',
+
+    '<rootDir>/payment/jest.config.js',
+    '<rootDir>/payment/jest.e2e.config.js',
   ],
 };
