@@ -116,6 +116,10 @@ if (!isTest) {
 
 /* ---------------- ROUTES ---------------- */
 
+app.get("/", (req, res) => {
+  res.json({ message: "Auth Service is running", version: "1.0.0" });
+});
+
 app.use("/api/auth", authRoutes);
 
 export default app; // Export the Express app directly

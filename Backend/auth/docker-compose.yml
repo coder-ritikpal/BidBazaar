@@ -1,0 +1,35 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: bidbazaar-mongo
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - bidbazaar
+
+  auth:
+    build: .
+    container_name: bidbazaar-auth
+    env_file: .env
+    environment:
+      MONGODB_URI: mongodb://root:password@mongodb:27017/bidbazaar-auth?authSource=admin
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    networks:
+      - bidbazaar
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+
+networks:
+  bidbazaar:
+    driver: bridge
