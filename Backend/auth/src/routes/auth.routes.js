@@ -22,7 +22,6 @@ router.post('/logout', authLimiter, logoutUser);
 // Google OAuth routes
 router.get('/google', passport.authenticate('google', {
   scope: ['profile', 'email'],
-  callbackURL: `http://localhost:3000/api/auth/google/callback` // Google should redirect to auth service's own callback
 }));
 router.get('/google/callback', passport.authenticate('google',{session: false,failureRedirect: '/login' }), googleAuthCallback);
 
