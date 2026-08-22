@@ -27,6 +27,13 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+
+app.get("/", (req, res) => {
+  res.json({ message: "Inventory Service is running", version: "1.0.0" });
+});
+
+
+
 app.use("/api/products", productRoutes);
 
 export default app;
