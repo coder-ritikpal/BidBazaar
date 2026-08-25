@@ -19,6 +19,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get("/", (req, res) => {
+    res.send("Welcome to the Cart Service API");
+});
+
 app.use("/api/orders", orderRoutes);
 
 
