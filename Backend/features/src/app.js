@@ -26,6 +26,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+
+app.get("/", (req, res) => {
+  res.json({ message: "Features Service is running", version: "1.0.0" });
+});
+
+
 app.use("/api/auctions", auctionRoutes);
 
 export default app;
