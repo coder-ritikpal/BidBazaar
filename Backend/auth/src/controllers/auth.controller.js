@@ -98,8 +98,9 @@ export async function googleAuthCallback(req, res) {
     };
 
     // Redirect back to the dashboard service with the token as a query parameter
-    return res.redirect(`https://bidbazaar-dashboard.onrender.com/api/dashboard/auth/google/callback?token=${token}&user=${JSON.stringify(userForRedirect)}`);
-  } catch (error) {
+return res.redirect(
+  `${config.DASHBOARD_SERVICE_URL}/api/dashboard/auth/google/callback?token=${encodeURIComponent(token)}&user=${encodeURIComponent(JSON.stringify(userForRedirect))}`
+    );  } catch (error) {
     console.error("Error in Google auth callback:", error);
     return res.redirect(`${FRONTEND_URL}/login?error=google_auth_failed`);
   }
