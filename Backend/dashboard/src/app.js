@@ -21,11 +21,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/dashboard", dashboardRoutes); // Change this line
 
+app.get("/", (req, res) => {
+    res.send("Dashboard Service is running");
+});
+
 
 // Export the Express app directly for listening on HTTP
 export default app;
 
 
-// You might want to add a separate export for the app if other modules need it,
-// but for the main entry point, exporting the server is typical.
-// For simplicity, we'll assume the main entry point will directly listen to this.
+

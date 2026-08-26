@@ -79,7 +79,23 @@ const forwardRequest = async (req, url) => {
     ...(req.method !== 'GET' && req.method !== 'HEAD' && { body: JSON.stringify(req.body) }),
   });
 
-  const data = await response.json().catch(() => ({ message: `Failed to parse JSON response from ${url}` }));
+  let data;
+  if (typeof response.text !== "function") {
+    // Supports the lightweight fetch mocks used by the unit tests.
+    data = await response.json();
+  } else {
+    const rawBody = await response.text();
+    try {
+      data = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      // Proxies and hosting providers often return an HTML/plain-text error page.
+      // Preserve the upstream status while returning a useful API error to clients.
+      data = {
+        message: `The downstream service returned a non-JSON response (status ${response.status}).`,
+        upstreamResponse: rawBody.slice(0, 500),
+      };
+    }
+  }
   if (!response.ok) {
     const targetOrigin = new URL(url).origin;
     const serviceName = targetOrigin === new URL(config.AUTH_SERVICE_URL).origin ? 'Auth' :
