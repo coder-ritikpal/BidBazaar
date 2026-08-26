@@ -1,0 +1,14 @@
+services:
+  mail:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bidbazaar-mail
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3006
+    ports:
+      - "3006:3006"
+    restart: unless-stopped
