@@ -17,6 +17,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.get('/', (req, res) => {
+    res.send('Payment Service is running');
+});
+
 app.use('/api/payments', paymentsRoutes);
 
 export default app;

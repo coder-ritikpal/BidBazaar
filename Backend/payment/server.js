@@ -32,8 +32,10 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-connectToRabbitMQ().then(() => {
-  app.listen(config.PORT, () => {
-    console.log(`Payment service running on port ${config.PORT}`);
-  });
+app.listen(config.PORT, () => {
+  console.log(`Payment service running on port ${config.PORT}`);
 });
+
+// Message-broker availability must not prevent HTTP health checks (or payment
+// requests) from reaching this service. The broker module retries on failure.
+connectToRabbitMQ();

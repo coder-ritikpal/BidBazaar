@@ -3,7 +3,9 @@ import { config as dotenvConfig } from 'dotenv';
 dotenvConfig();
 
 const _config = {
-  PORT: process.env.PAYMENT_SERVICE_PORT || 3005,
+  // Hosting providers such as Render assign the listening port through PORT.
+  // Keep the service-specific variable for local backwards compatibility.
+  PORT:  process.env.PAYMENT_SERVICE_PORT || 3005,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
   RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
   RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
