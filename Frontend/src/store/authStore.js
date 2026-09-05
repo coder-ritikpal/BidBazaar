@@ -3,7 +3,7 @@ import { useDashboardStore } from './dashboardStore';
 import { useCartStore } from './cartStore';
 import { useInventoryStore } from './inventoryStore';
 import { updateProfile as updateProfileApi } from '../data/api.js';
-import api from '@/utils/api';
+import api, { API_BASE_URL } from '@/utils/api';
 
 export const useAuthStore = create((set, get) => ({
   isLoggedIn: !!localStorage.getItem('token'),
@@ -70,7 +70,7 @@ export const useAuthStore = create((set, get) => ({
         console.error("Auth status check failed:", error);
       }
       if (error.code === 'ERR_NETWORK' || error.message?.includes('ECONNREFUSED')) { // Use optional chaining for error.message
-        console.error("Network Error: Could not connect to the dashboard service. Please ensure it's running on http://localhost:3004.");
+        console.error(`Network Error: Could not connect to the dashboard service at ${API_BASE_URL}.`);
       }
       localStorage.removeItem('token'); // Clear invalid token
       set({ isLoggedIn: false, user: null, token: null, loginMethod: null, showGoogleLoginToast: null, error: error.message }); // Adding 'error' state for easier debugging

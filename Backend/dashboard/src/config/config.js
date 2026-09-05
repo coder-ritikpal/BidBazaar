@@ -12,7 +12,9 @@ const _config = {
     return secret;
   },
   
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  // Browser Origin values never include a trailing slash. Normalize the
+  // deployment value so `https://site.netlify.app/` works as expected.
+  FRONTEND_URL: (process.env.FRONTEND_URL || 'http://localhost:5173').trim().replace(/\/+$/, ''),
   AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || "http://localhost:3000",
   INVENTORY_SERVICE_URL: process.env.INVENTORY_SERVICE_URL || "http://localhost:3001",
   AUCTIONS_SERVICE_URL: process.env.AUCTIONS_SERVICE_URL || "http://localhost:3002",
