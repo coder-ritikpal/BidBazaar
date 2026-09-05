@@ -40,7 +40,23 @@ const forwardPublicRequest = async (req, url) => {
     ...(req.method !== 'GET' && req.method !== 'HEAD' && { body: JSON.stringify(req.body) }),
   });
 
-  const data = await response.json();
+  let data;
+  if (typeof response.text !== "function") {
+    // Supports the lightweight fetch mocks used by the unit tests.
+    data = await response.json();
+  } else {
+    const rawBody = await response.text();
+    try {
+      data = rawBody ? JSON.parse(rawBody) : {};
+    } catch {
+      // Hosting providers may return a plain-text or HTML error page (for
+      // example, a rate-limit response) instead of the service JSON contract.
+      data = {
+        message: `The downstream service returned a non-JSON response (status ${response.status}).`,
+        upstreamResponse: rawBody.slice(0, 500),
+      };
+    }
+  }
   if (!response.ok) {
     const targetOrigin = new URL(url).origin;
     const serviceName = targetOrigin === new URL(config.AUTH_SERVICE_URL).origin ? 'Auth' :
