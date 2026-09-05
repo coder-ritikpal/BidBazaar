@@ -3,13 +3,16 @@ import cors from "cors";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import config from "./config/config.js";
 
 
 const app = express();
 
 app.use(cors(
     {
-        origin: "http://localhost:5173", // Explicitly set for HTTP frontend
+        // The frontend is deployed separately from this BFF.  Keep localhost
+        // working for development while allowing the configured production URL.
+        origin: ["http://localhost:5173", config.FRONTEND_URL],
         methods: ["GET", "POST", "PUT", "DELETE"],
         allowedHeaders: ["Content-Type", "Authorization"], // Explicitly allow Authorization header
         credentials: true,
