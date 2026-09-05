@@ -1,4 +1,4 @@
-import api from '@/utils/api';
+import api, { API_BASE_URL } from '@/utils/api';
 
 // --- Authentication API Calls (proxied through Dashboard BFF) ---
 
@@ -12,7 +12,7 @@ export const loginUser = async (credentials) => {
 
 export const googleAuth = () => {
   // This will redirect the browser to the Google OAuth consent screen
-  window.location.href = `/api/dashboard/auth/google`;
+  window.location.href = `${API_BASE_URL}/dashboard/auth/google`;
 };
 
 export const updateProfile = async (profileData) => {
