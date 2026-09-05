@@ -1,9 +1,36 @@
 import wishlistModel from "../models/wishlist.model.js";
 import config from "../config/config.js";
 
+const RENDER_COLD_START_DELAYS_MS = [2000, 4000, 8000, 16000, 24000];
+
+const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+const isRenderColdStartResponse = async (response) => {
+  if (response.status !== 429 || typeof response.clone !== "function") return false;
+
+  const body = await response.clone().text().catch(() => "");
+  return body.trim() === "Too Many Requests";
+};
+
+// Free Render instances can return a temporary plain-text 429 while waking.
+// Retry only that platform response; do not retry application 429s, which may
+// represent an intentional rate limit or a payment already being processed.
+const fetchWithColdStartRetry = async (url, options) => {
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, options);
+    const shouldRetry = await isRenderColdStartResponse(response);
+
+    if (!shouldRetry || attempt === RENDER_COLD_START_DELAYS_MS.length) {
+      return response;
+    }
+
+    await wait(RENDER_COLD_START_DELAYS_MS[attempt]);
+  }
+};
+
 const fetchAuctionSnapshot = async (auctionId) => {
   const url = new URL(`/api/auctions/${auctionId}`, config.AUCTIONS_SERVICE_URL);
-  const response = await fetch(url, { method: "GET" });
+  const response = await fetchWithColdStartRetry(url, { method: "GET" });
   if (!response.ok) return null;
 
   const data = await response.json().catch(() => null);
@@ -34,7 +61,7 @@ const forwardPublicRequest = async (req, url) => {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  const response = await fetch(url, {
+  const response = await fetchWithColdStartRetry(url, {
     method: req.method,
     headers: headers,
     ...(req.method !== 'GET' && req.method !== 'HEAD' && { body: JSON.stringify(req.body) }),
@@ -86,7 +113,7 @@ const forwardRequest = async (req, url) => {
     throw error;
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithColdStartRetry(url, {
     method: req.method,
     headers: {
       "Authorization": `Bearer ${token}`, // Forward the token to downstream services
@@ -156,7 +183,7 @@ const forwardMultipartRequest = async (req, url) => {
     }
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithColdStartRetry(url, {
     method: req.method,
     headers: {
       "Authorization": `Bearer ${token}`,
