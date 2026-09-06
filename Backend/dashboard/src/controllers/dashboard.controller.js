@@ -1,15 +1,25 @@
 import wishlistModel from "../models/wishlist.model.js";
 import config from "../config/config.js";
 
-const RENDER_COLD_START_DELAYS_MS = [2000, 4000, 8000, 16000, 24000];
+// Render can take longer than a minute to wake a sleeping instance. Keep the
+// retries server-side so the browser makes one request instead of repeatedly
+// hammering the service while it is starting.
+const RENDER_COLD_START_DELAYS_MS = [2000, 4000, 8000, 16000, 24000, 30000, 30000];
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 const isRenderColdStartResponse = async (response) => {
   if (response.status !== 429 || typeof response.clone !== "function") return false;
 
-  const body = await response.clone().text().catch(() => "");
-  return body.trim() === "Too Many Requests";
+  const copy = response.clone();
+  const body = await copy.text().catch(() => "");
+  const contentType = copy.headers?.get?.("content-type") || "";
+
+  // A JSON 429 belongs to the downstream application and must be passed
+  // through unchanged. Render's wake-up response is a plain-text/HTML 429;
+  // its wording is not stable enough to compare as an exact string.
+  return !contentType.toLowerCase().includes("application/json")
+    && /too many requests|rate limit/i.test(body);
 };
 
 // Free Render instances can return a temporary plain-text 429 while waking.
@@ -24,7 +34,11 @@ const fetchWithColdStartRetry = async (url, options) => {
       return response;
     }
 
-    await wait(RENDER_COLD_START_DELAYS_MS[attempt]);
+    const retryAfterSeconds = Number(response.headers?.get?.("retry-after"));
+    const retryAfterMs = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+      ? retryAfterSeconds * 1000
+      : 0;
+    await wait(Math.max(RENDER_COLD_START_DELAYS_MS[attempt], retryAfterMs));
   }
 };
 

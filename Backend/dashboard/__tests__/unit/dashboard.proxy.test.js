@@ -11,6 +11,16 @@ const response = (body, status = 200) => ({
   json: jest.fn().mockResolvedValue(body),
 });
 
+const renderColdStartResponse = () => ({
+  ok: false,
+  status: 429,
+  clone: () => ({
+    text: jest.fn().mockResolvedValue("Too Many Requests"),
+    headers: { get: jest.fn().mockReturnValue("text/plain") },
+  }),
+  headers: { get: jest.fn().mockReturnValue(null) },
+});
+
 describe("dashboard proxy routes", () => {
   beforeEach(() => {
     global.fetch = jest.fn();
@@ -31,6 +41,37 @@ describe("dashboard proxy routes", () => {
       expect.objectContaining({ href: "http://localhost:3002/api/auctions" }),
       expect.objectContaining({ method: "GET" }),
     );
+  });
+
+  test("retries a Render cold-start 429 before returning auctions", async () => {
+    global.fetch
+      .mockResolvedValueOnce(renderColdStartResponse())
+      .mockResolvedValueOnce(response({ auctions: [{ _id: "auction-1" }] }));
+
+    const res = await request(app).get("/api/dashboard/auctions");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ auctions: [{ _id: "auction-1" }] });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test("does not retry a JSON 429 from the auctions application", async () => {
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      clone: () => ({
+        text: jest.fn().mockResolvedValue(JSON.stringify({ message: "Bid rate limit reached" })),
+        headers: { get: jest.fn().mockReturnValue("application/json") },
+      }),
+      text: jest.fn().mockResolvedValue(JSON.stringify({ message: "Bid rate limit reached" })),
+      headers: { get: jest.fn().mockReturnValue("application/json") },
+    });
+
+    const res = await request(app).get("/api/dashboard/auctions");
+
+    expect(res.status).toBe(429);
+    expect(res.body).toEqual({ message: "Bid rate limit reached" });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   test("forwards an optional bearer token for a public auction detail request", async () => {
