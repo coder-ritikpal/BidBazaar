@@ -21,6 +21,7 @@ import YourAuctions from '@/pages/dashboard/YourAuctions';
 import AuctionDetailsPage from '@/pages/features/AuctionDetailsPage';
 import OrderDetailPage from '@/pages/dashboard/OrderDetailPage';
 import CategoriesCarousel from '@/pages/containers/CategoriesCarousel.jsx';
+import ProtectedRoute from './ProtectedRoute.jsx';
 
 const AppRoutes = () => {
   return (
@@ -41,6 +42,13 @@ const AppRoutes = () => {
       <Route path="/listed-items" element={<ListedItems />} />
       <Route path="/orders" element={<MyOrders />} />
       <Route path="/your-auctions" element={<YourAuctions />} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+      <Route path="/listed-items" element={<ProtectedRoute><ListedItems /></ProtectedRoute>} />
+      <Route path="/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+      <Route path="/your-auctions" element={<ProtectedRoute><YourAuctions /></ProtectedRoute>} />
+      <Route path="/start-selling" element={<ProtectedRoute><StartSellingPage /></ProtectedRoute>} />
+      <Route path="/order/:orderId" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
       <Route path="/auction/:auctionId" element={<AuctionDetailsPage />} />
       <Route path="/order/:orderId" element={<OrderDetailPage />} />
       <Route path="*" element={<NotFound />} />

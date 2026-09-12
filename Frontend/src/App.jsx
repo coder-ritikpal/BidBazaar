@@ -4,13 +4,16 @@ import AppRoutes from './routes/Routes.jsx'
 import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast
 import { useAuthStore } from '@/store/authStore'
 // import { useNavigate } from 'react-router-dom'; // Uncomment if you need to navigate after login
+import { useNavigate } from 'react-router-dom';
 
 const App = () => {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
   const login = useAuthStore((state) => state.login); // Get the login action
+  const login = useAuthStore((state) => state.login);
   const showGoogleLoginToast = useAuthStore((state) => state.showGoogleLoginToast);
   const clearGoogleLoginToast = useAuthStore((state) => state.clearGoogleLoginToast);
   // const navigate = useNavigate(); // Uncomment if you need to navigate after login
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Handle Google OAuth redirect
@@ -25,6 +28,12 @@ const App = () => {
         login(user, token, 'google');
         window.history.replaceState({}, document.title, window.location.pathname); // Clean up URL
         if (authFlow) sessionStorage.setItem('auth_flow', authFlow);
+        
+        const redirectPath = sessionStorage.getItem('redirect_after_login');
+        if (redirectPath) {
+          sessionStorage.removeItem('redirect_after_login');
+          navigate(redirectPath, { replace: true });
+        }
       } catch (e) {
         console.error("Failed to parse user data from Google OAuth callback:", e);
         // Optionally redirect to login with error, or show toast
@@ -33,6 +42,7 @@ const App = () => {
     }
     checkAuthStatus();
   }, [checkAuthStatus, login]); // Add login to dependency array
+  }, [checkAuthStatus, login, navigate]);
 
   useEffect(() => {
     if (showGoogleLoginToast) {

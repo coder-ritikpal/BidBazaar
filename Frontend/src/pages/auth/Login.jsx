@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom'; // Import useNavigate and Link
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
 
 import { toast } from 'react-toastify'; // Import toast
@@ -22,6 +23,7 @@ const Login = () => {
   const [emailError, setEmailError] = useState(''); // State for email validation error
   const [passwordError, setPasswordError] = useState(''); // State for password validation error
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,6 +84,8 @@ const Login = () => {
       toast.success('Login successful!'); // Show success toast
       login(response.data.user, response.data.token, 'email'); // Correctly access user and token from response.data
       navigate('/'); // Navigate to home page on successful login
+      const from = location.state?.from || '/';
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Error logging in user:', error);
       if (axios.isAxiosError(error)) {
@@ -132,6 +136,9 @@ const Login = () => {
   const { appNameHeadingClasses } = getAuthPageClasses(theme); // Reusing logoTextClasses for app name heading
 
   const handleGoogleLogin = () => { // This will now redirect to dashboard BFF
+    if (location.state?.from) {
+      sessionStorage.setItem('redirect_after_login', location.state.from);
+    }
     googleAuth();
   };
 
