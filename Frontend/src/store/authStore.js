@@ -66,14 +66,20 @@ export const useAuthStore = create((set, get) => ({
       // Token is already set from initialization, just update user and login status
       set({ isLoggedIn: true, user: user, loginMethod: method, showGoogleLoginToast: toastMessage });
     } catch (error) {
-      if (error.response?.status !== 401) {
-        console.error("Auth status check failed:", error);
+      if (error.response?.status === 401) {
+        // Token is explicitly invalid or expired
+        localStorage.removeItem('token');
+        set({ isLoggedIn: false, user: null, token: null, loginMethod: null, showGoogleLoginToast: null });
+      } else {
+        // Transient network error or 5xx server error (cold start)
+        console.error("Auth status check failed (Network/Server error):", error);
+        if (error.code === 'ERR_NETWORK' || error.message?.includes('ECONNREFUSED')) {
+          console.error(`Network Error: Could not connect to the dashboard service at ${API_BASE_URL}.`);
+        }
+        // Keep the token in localStorage so the user remains logged in when the server recovers!
+        // We temporarily set isLoggedIn false to avoid UI crashing on null user data.
+        set({ isLoggedIn: false, user: null, loginMethod: null, showGoogleLoginToast: null, error: error.message });
       }
-      if (error.code === 'ERR_NETWORK' || error.message?.includes('ECONNREFUSED')) { // Use optional chaining for error.message
-        console.error(`Network Error: Could not connect to the dashboard service at ${API_BASE_URL}.`);
-      }
-      localStorage.removeItem('token'); // Clear invalid token
-      set({ isLoggedIn: false, user: null, token: null, loginMethod: null, showGoogleLoginToast: null, error: error.message }); // Adding 'error' state for easier debugging
       sessionStorage.removeItem('auth_flow');
     } finally {
       set({ loading: false });
