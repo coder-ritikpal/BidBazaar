@@ -5,6 +5,35 @@ import "../models/user.model.js";
 import { createOrderForAuction } from "../services/cart.service.js";
 import config from "../config/config.js";
 import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
+import jwt from "jsonwebtoken";
+
+const triggerAutoCreateOrder = async (auction) => {
+  if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
+    console.error("Missing config for internal cart service call.");
+    return;
+  }
+  
+  try {
+    const internalToken = jwt.sign(
+      { service: 'features-service' },
+      config.INTERNAL_AUTH_TOKEN_SECRET,
+      { expiresIn: '5m' }
+    );
+    const url = new URL('/api/orders/internal/auto-create', config.CART_SERVICE_URL);
+    
+    // Fire and forget
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${internalToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ auctionId: auction._id })
+    }).catch(err => console.error("Failed to trigger auto-create order:", err));
+  } catch (error) {
+    console.error("Failed to sign internal token for auto-create order:", error);
+  }
+};
  
 const MIN_AUCTION_DURATION_MS = (config.MIN_AUCTION_DURATION_MINUTES || 5) * 60 * 1000;
 const toDurationMs = (duration, unit = "days") => {
@@ -55,6 +84,7 @@ const toAuctionResponse = async (auction) => { // Made async to allow await for 
 
   if (currentStatus === "ended" && !auction.cancelledAt) {
     let shouldSave = false;
+    let newlyAssignedWinner = false;
 
     // Ensure deleteAt is always set for ended auctions (including manual end).
     if (!auction.deleteAt) {
@@ -70,11 +100,16 @@ const toAuctionResponse = async (auction) => { // Made async to allow await for 
         auction.winnerId = winningBid.bidderId;
         auction.winningBidId = winningBid._id;
         shouldSave = true;
+        newlyAssignedWinner = true;
       }
     }
 
     if (shouldSave) {
       await auction.save();
+    }
+
+    if (newlyAssignedWinner) {
+      triggerAutoCreateOrder(auction);
     }
   }
 
@@ -318,15 +353,22 @@ export const endAuction = async (req, res) => {
 
     // Determine winner at end time (latest bid is the highest due to bid rules).
     const winningBid = await bidModel.findOne({ auctionId }).sort({ createdAt: -1 });
+    let newlyAssignedWinner = false;
+    
     if (winningBid) {
       auction.winnerId = winningBid.bidderId;
       auction.winningBidId = winningBid._id;
+      newlyAssignedWinner = true;
     }
 
     // Manually end the auction by setting its end time to now
     auction.endAuctionAt = new Date();
     
     await auction.save();
+
+    if (newlyAssignedWinner) {
+      triggerAutoCreateOrder(auction);
+    }
 
     const responseAuction = await toAuctionResponse(auction);
     res.status(200).json({ message: "Auction ended successfully and winner declared.", auction: responseAuction });
