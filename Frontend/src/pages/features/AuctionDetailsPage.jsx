@@ -52,7 +52,9 @@ const AuctionDetailsPage = () => {
   const [isBidding, setIsBidding] = useState(false);
   const [mainImage, setMainImage] = useState('');
   const [sellerDisplayName, setSellerDisplayName] = useState(null);
-  const SOCKET_URL = import.meta.env.VITE_API_URL_FEATURES || 'http://localhost:3002';
+  // Use environment variable, fallback to production URL if in prod, otherwise localhost
+  const SOCKET_URL = import.meta.env.VITE_API_URL_FEATURES || 
+    (import.meta.env.PROD ? 'https://bidbazaar-auctions.onrender.com' : 'http://localhost:3002');
 
   const fetchAuction = useCallback(async () => {
     try {

@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_BASE_URL } from '@/utils/api';
+
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://bidbazaar-dashboard.onrender.com' : 'http://localhost:3000');
 
 const ForgotPassword = () => {
   const theme = useThemeStore((state) => state.theme);
