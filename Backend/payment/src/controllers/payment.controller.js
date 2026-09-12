@@ -8,43 +8,83 @@ const razorpayInstance = new Razorpay({
   key_secret: config.RAZORPAY_KEY_SECRET,
 });
 
-export const createOrder = async (req, res) => {
-  const { amount, orderId } = req.body;
-  const userId = req.user?.id;
-
-  if (!amount || !orderId) {
-    return res.status(400).json({ message: 'Amount and Order ID are required.' });
+const fetchOrderFromCartService = async (orderId, authHeader) => {
+  if (!config.CART_SERVICE_URL) {
+    throw new Error("Internal configuration error: Cart service URL is missing.");
   }
-
-  const baseAmount = Number(amount);
-  if (isNaN(baseAmount) || baseAmount <= 0) {
-    return res.status(400).json({ message: 'Invalid amount provided.' });
-  }
-
-  // Calculate Buyer's Protection Fee: 5% + 100 INR
-  const protectionFee = (baseAmount * 0.05) + 100;
-  const totalAmount = baseAmount + protectionFee;
-
-  const options = {
-    amount: Math.round(totalAmount * 100), // amount in the smallest currency unit (paise)
-    currency: "INR",
-    receipt: `receipt_order_${orderId}`,
-    notes: {
-      orderId,
-      userId,
-      baseAmount: String(baseAmount),
-      protectionFee: String(protectionFee.toFixed(2)),
-      totalAmount: String(totalAmount.toFixed(2)),
+  
+  const url = new URL(`/api/orders/${orderId}`, config.CART_SERVICE_URL);
+  
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': authHeader,
+      'Content-Type': 'application/json'
     }
-  };
+  });
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error("Order not found.");
+    }
+    const errorText = await response.text();
+    console.error(`Failed to fetch order ${orderId}: ${response.status} ${response.statusText}`, errorText);
+    throw new Error("Failed to fetch order details.");
+  }
+
+  const data = await response.json();
+  return data.order;
+};
+
+export const createOrder = async (req, res) => {
+  const { orderId } = req.body;
+  const userId = req.user?.id;
+  const authHeader = req.headers.authorization;
+
+  if (!orderId) {
+    return res.status(400).json({ message: 'Order ID is required.' });
+  }
 
   try {
+    const order = await fetchOrderFromCartService(orderId, authHeader);
+    
+    if (String(order.winnerId) !== userId) {
+      return res.status(403).json({ message: "You are not authorized to pay for this order." });
+    }
+
+    if (order.status !== 'pending_payment') {
+      return res.status(400).json({ message: "Order is not pending payment." });
+    }
+
+    const baseAmount = Number(order.amount);
+    if (isNaN(baseAmount) || baseAmount <= 0) {
+      return res.status(400).json({ message: 'Invalid order amount.' });
+    }
+
+    // Calculate Buyer's Protection Fee: 5% + 100 INR
+    const protectionFee = (baseAmount * 0.05) + 100;
+    const totalAmount = baseAmount + protectionFee;
+
+    const options = {
+      amount: Math.round(totalAmount * 100), // amount in the smallest currency unit (paise)
+      currency: "INR",
+      receipt: `receipt_order_${orderId}`,
+      notes: {
+        orderId,
+        userId,
+        baseAmount: String(baseAmount),
+        protectionFee: String(protectionFee.toFixed(2)),
+        totalAmount: String(totalAmount.toFixed(2)),
+      }
+    };
+
     const razorpayOrder = await razorpayInstance.orders.create(options);
-    // The response `razorpayOrder` will have the `totalAmount` in paise.
     res.status(200).json(razorpayOrder);
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
-    res.status(500).json({ message: 'Failed to create payment order.', error: error.message });
+    res.status(error.message === 'Order not found.' ? 404 : 500).json({ 
+      message: 'Failed to create payment order.', 
+      error: error.message 
+    });
   }
 };
 
