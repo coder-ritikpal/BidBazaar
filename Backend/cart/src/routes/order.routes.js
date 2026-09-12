@@ -1,5 +1,5 @@
 import express from "express";
-import { getMyOrders, createOrder, payForOrder, shipOrder, getSoldOrders, getOrderById, confirmDelivery } from "../controllers/order.controller.js";
+import { getMyOrders, createOrder, autoCreateOrder, payForOrder, shipOrder, getSoldOrders, getOrderById, confirmDelivery } from "../controllers/order.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { internalAuthMiddleware } from "../middlewares/internalAuth.middleware.js";
 
@@ -16,6 +16,9 @@ router.post("/", authMiddleware, createOrder);
 
 // This endpoint gets a single order by its ID
 router.get("/:orderId", authMiddleware, getOrderById);
+
+// This endpoint is called INTERNALLY by the features service to auto-create an order for a won auction
+router.post("/internal/auto-create", internalAuthMiddleware, autoCreateOrder);
 
 // This endpoint is called INTERNALLY by the payment service to confirm payment.
 router.post("/:orderId/pay", internalAuthMiddleware, payForOrder);

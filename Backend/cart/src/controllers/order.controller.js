@@ -180,6 +180,55 @@ export const createOrder = async (req, res) => {
   }
 };
 
+export const autoCreateOrder = async (req, res) => {
+  const { auctionId } = req.body;
+
+  if (!auctionId) {
+    return res.status(400).json({ message: "auctionId is required" });
+  }
+
+  try {
+    // Idempotency check: if an order for this auction already exists, return it.
+    const existingOrder = await orderModel.findOne({ auctionId });
+    if (existingOrder) {
+      return res.status(200).json({ message: "Order already exists.", order: existingOrder });
+    }
+
+    // Fetch fresh auction data to verify winner and details
+    const auction = await fetchAuctionFromService(auctionId);
+
+    // Verifications
+    if (auction.status !== 'ended') {
+      return res.status(400).json({ message: "Can only create orders for ended auctions." });
+    }
+    if (!auction.winnerId) {
+      return res.status(400).json({ message: "Auction has no winner yet." });
+    }
+
+    // Create a new order
+    const newOrder = await orderModel.create({
+      auctionId,
+      productId: auction.productId,
+      sellerId: auction.sellerId,
+      winnerId: auction.winnerId,
+      amount: auction.currentPrice,
+      status: 'pending_payment',
+      itemDetails: {
+        title: auction.title || 'Untitled Item',
+        image: auction.images?.[0]?.url || null,
+      },
+    });
+
+    res.status(201).json({ message: "Order auto-created successfully.", order: newOrder });
+  } catch (error) {
+    console.error("Error auto-creating order:", error);
+    if (error.message.includes("not found")) {
+        return res.status(404).json({ message: "Auction not found." });
+    }
+    res.status(500).json({ message: "Failed to auto-create order.", error: error.message });
+  }
+};
+
 export const payForOrder = async (req, res) => {
   const { orderId } = req.params;
   const userId = req.user?.id;
