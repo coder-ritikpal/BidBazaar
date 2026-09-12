@@ -78,7 +78,7 @@ export const getAuctionStatus = (auction, now = Date.now()) => { // Exported for
   return "upcoming";
 };
 
-const toAuctionResponse = async (auction) => { // Made async to allow await for save()
+export const toAuctionResponse = async (auction) => { // Made async to allow await for save()
   const endAuctionAtTime = getAuctionEndTime(auction).getTime();
   const currentStatus = getAuctionStatus(auction);
 

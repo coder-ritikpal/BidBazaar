@@ -4,6 +4,7 @@ import app from "./src/app.js";
 import connectDB from "./src/db/db.js";
 import initializeSocket from "./src/socket/connection.js";
 import config from "./src/config/config.js";
+import startResolveAuctionsCron from "./src/cron/resolveAuctions.js";
 
 const PORT = process.env.PORT || 3002;
 
@@ -23,6 +24,8 @@ app.set('io', io);
 
 if (process.env.NODE_ENV !== "test") {
   connectDB();
+  // Start background cron jobs
+  startResolveAuctionsCron();
 }
 
 if (process.env.NODE_ENV !== "test") {
