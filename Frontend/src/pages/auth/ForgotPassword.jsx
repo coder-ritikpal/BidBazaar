@@ -8,10 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 import { API_BASE_URL } from '@/utils/api';
-
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://bidbazaar-dashboard.onrender.com' : 'http://localhost:3000');
 
 const ForgotPassword = () => {
   const theme = useThemeStore((state) => state.theme);
@@ -60,7 +57,7 @@ const ForgotPassword = () => {
     try {
       // This would typically send a request to your backend to send a password reset email
       // For now, it's a placeholder.
-      // const response = await axios.post(`${API_URL}/api/auth/forgot-password`, { email });
+      // const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
       // console.log(response.data);
       toast.success('If an account with that email exists, a password reset link has been sent.');
       setSuccessMessage('If an account with that email exists, a password reset link has been sent to your email address.');
