@@ -140,6 +140,22 @@ export const createAuction = async (req, res) => {
 
     ensureMinAuctionDuration(req.body.auctionDuration, req.body.auctionDurationUnit);
 
+    const reviewEndsAtDate = new Date(req.body.reviewEndsAt);
+    const startAuctionAtDate = new Date(req.body.startAuctionAt);
+    const now = new Date();
+
+    if (isNaN(reviewEndsAtDate.getTime()) || isNaN(startAuctionAtDate.getTime())) {
+      return res.status(400).json({ message: "Invalid date format for reviewEndsAt or startAuctionAt." });
+    }
+
+    if (reviewEndsAtDate <= now) {
+      return res.status(400).json({ message: "Review end time must be in the future." });
+    }
+
+    if (startAuctionAtDate <= reviewEndsAtDate) {
+      return res.status(400).json({ message: "Auction start time must be after the review period ends." });
+    }
+
     const auction = await auctionModel.create({
       productId: req.body.productId,
       sellerId: req.body.sellerId,
@@ -428,6 +444,22 @@ export const updateAuction = async (req, res) => {
       return res.status(400).json({ message: `Auction duration unit must be one of: ${AUCTION_DURATION_UNITS.join(", ")}.` });
     }
     ensureMinAuctionDuration(nextDuration, nextUnit);
+
+    const nextReviewEndsAt = new Date(req.body.reviewEndsAt ?? auction.reviewEndsAt);
+    const nextStartAuctionAt = new Date(req.body.startAuctionAt ?? auction.startAuctionAt);
+    const now = new Date();
+
+    if (isNaN(nextReviewEndsAt.getTime()) || isNaN(nextStartAuctionAt.getTime())) {
+      return res.status(400).json({ message: "Invalid date format for reviewEndsAt or startAuctionAt." });
+    }
+
+    if (req.body.reviewEndsAt !== undefined && nextReviewEndsAt <= now) {
+      return res.status(400).json({ message: "Review end time must be in the future." });
+    }
+
+    if (nextStartAuctionAt <= nextReviewEndsAt) {
+      return res.status(400).json({ message: "Auction start time must be after the review period ends." });
+    }
 
     const { startingPrice, ...updateData } = req.body;
     const { auctionDuration, auctionDurationUnit, ...restOfUpdateData } = updateData; // Destructure to handle duration separately
