@@ -411,7 +411,7 @@ export const deleteProduct = async (req, res) => {
     // Delete the corresponding auction in the features service
     if (product.auctionId) {
       try {
-        await deleteAuctionForProduct(product.auctionId);
+        await deleteAuctionForProduct(product.auctionId, sellerId);
       } catch (auctionError) {
         // Log the error but don't prevent product deletion from succeeding
         console.error(`Inventory Service: Failed to delete auction ${product.auctionId} for product ${product._id}:`, auctionError.message);

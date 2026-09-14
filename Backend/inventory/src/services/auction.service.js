@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 
 /**
@@ -11,6 +12,14 @@ class AuctionServiceError extends Error {
     this.payload = payload;
   }
 }
+
+const getInternalToken = (sellerId) => {
+  return jwt.sign(
+    { id: sellerId, service: 'inventory-service' },
+    config.INTERNAL_AUTH_TOKEN_SECRET,
+    { expiresIn: '5m' }
+  );
+};
 
 /**
  * A helper to construct the payload for auction creation and updates.
@@ -43,10 +52,17 @@ const toAuctionPayload = (productObject) => ({
  * A generic request handler for the auction service.
  * @param {string} path - The API path (e.g., `/${auctionId}`).
  * @param {object} options - The options for the `fetch` call.
+ * @param {string} sellerId - The sellerId to generate the internal token.
  * @returns {Promise<object|void>} The JSON response or void for 204.
  */
-async function auctionServiceRequest(path, options) {
+async function auctionServiceRequest(path, options, sellerId) {
   const url = `${config.AUCTIONS_SERVICE_URL}/api/auctions${path}`;
+  
+  const token = getInternalToken(sellerId);
+  options.headers = {
+    ...options.headers,
+    'Authorization': `Bearer ${token}`
+  };
 
   const response = await fetch(url, options);
 
@@ -76,7 +92,7 @@ export async function createAuctionForProduct(product) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  });
+  }, productObject.sellerId);
 }
 
 export async function updateAuctionForProduct(product) {
@@ -91,15 +107,15 @@ export async function updateAuctionForProduct(product) {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  });
+  }, productObject.sellerId);
 }
 
-export async function deleteAuctionForProduct(auctionId) {
+export async function deleteAuctionForProduct(auctionId, sellerId) {
   if (!auctionId) {
     throw new Error("Auction ID is required to delete an auction.");
   }
 
   return auctionServiceRequest(`/${auctionId}`, {
     method: "DELETE",
-  });
+  }, sellerId);
 }
