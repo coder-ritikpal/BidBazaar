@@ -329,6 +329,15 @@ export const confirmDelivery = async (req, res) => {
     order.status = 'delivered';
     await order.save();
 
+    // Publish event
+    import('../broker/publisher.js').then(({ publishToQueue }) => {
+      publishToQueue('delivery_confirmed', {
+        orderId: order._id.toString(),
+        userId: userId,
+        sellerId: order.sellerId.toString()
+      });
+    }).catch(err => console.error(err));
+
     res.status(200).json({ message: "Delivery confirmed. Thank you!", order });
   } catch (error) {
     console.error("Error confirming delivery:", error);

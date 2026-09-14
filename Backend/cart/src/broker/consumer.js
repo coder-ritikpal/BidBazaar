@@ -15,6 +15,15 @@ const handlePaymentVerified = async (msg) => {
         order.status = 'paid';
         await order.save();
         console.log(`[Cart Service] Order ${orderId} status updated to 'paid'.`);
+        
+        import('./publisher.js').then(({ publishToQueue }) => {
+          publishToQueue('order_placed', {
+            orderId: order._id.toString(),
+            userId: order.userId.toString(),
+            amount: order.totalAmount
+          });
+        }).catch(err => console.error(err));
+
         channel.ack(msg);
       } else {
         console.warn(`[Cart Service] Order ${orderId} not found or not in 'pending_payment' state.`);

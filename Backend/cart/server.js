@@ -1,6 +1,7 @@
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
 import { connectAndConsume } from './src/broker/consumer.js';
+import { connectProducer } from './src/broker/publisher.js';
 import startExpireOrdersCron from './src/cron/expireOrders.js';
 
 // Only connect to the database and RabbitMQ if not in a test environment
@@ -8,6 +9,7 @@ if (process.env.NODE_ENV !== 'test') {
   connectDB();
   // Connect to RabbitMQ and start consuming messages for payment verification
   connectAndConsume();
+  connectProducer();
   // Start background cron jobs
   startExpireOrdersCron();
 }
