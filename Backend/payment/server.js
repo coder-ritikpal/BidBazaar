@@ -13,10 +13,22 @@ app.use(cors({
   origin: [config.FRONTEND_URL, 'http://localhost:3004'], // Allow BFF and Frontend
   credentials: true,
 }));
-app.use(express.json());
+
+// Capture raw body for Razorpay Webhook signature verification
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use(cookieParser());
+
+// Root health check for Render
+app.get('/', (req, res) => {
+  res.status(200).send('Payment Service is running');
+});
 
 // Health check
 app.get('/api/payments/health', (_req, res) => {

@@ -5,6 +5,7 @@ dotenvConfig();
 const _config = {
   // Hosting providers such as Render assign the listening port through PORT.
   // Keep the service-specific variable for local backwards compatibility.
+  PORT: process.env.PORT || process.env.PAYMENT_SERVICE_PORT || 3005,
   MONGODB_URI: process.env.MONGODB_URI,
   JWT_SECRET: process.env.JWT_SECRET,
   INTERNAL_API_KEY: process.env.INTERNAL_API_KEY,
