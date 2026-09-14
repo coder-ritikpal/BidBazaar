@@ -8,8 +8,10 @@ import {
   getMe, // Import the new getMe function
   getUserPublicProfile,
   updateProfile,
+  getInternalUserDetails,
 } from '../controllers/auth.controller.js';
 import { protect } from '../middlewares/auth.middleware.js'; 
+import { internalAuthMiddleware } from '../middlewares/internalAuth.middleware.js';
 import { authLimiter } from '../middlewares/rateLimit.middleware.js';
 import { registerUserValidationRules } from '../middlewares/validation.middleware.js';
 
@@ -28,5 +30,6 @@ router.get('/google/callback', passport.authenticate('google',{session: false,fa
 router.get('/me', protect, getMe); // Protected route to get current user details
 router.put('/me', protect, updateProfile); // Protected route to update current user details
 router.get('/users/:userId', getUserPublicProfile); // Public route (name only)
+router.get('/internal/users/:userId', internalAuthMiddleware, getInternalUserDetails); // Internal route (full details)
 
 export default router;

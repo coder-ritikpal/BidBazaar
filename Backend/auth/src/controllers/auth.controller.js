@@ -191,6 +191,33 @@ export const getUserPublicProfile = async (req, res) => {
   }
 };
 
+export const getInternalUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid user ID format." });
+    }
+
+    const user = await userModel.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    return res.status(200).json({
+      user: {
+        id: userId,
+        email: user.email,
+        fullName: user.fullName || null,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching internal user details:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 export const updateProfile = async (req, res) => {
   const userId = req.user?.id;
   const updates = req.body;

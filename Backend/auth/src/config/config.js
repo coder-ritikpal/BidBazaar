@@ -17,6 +17,7 @@ const _config = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   SESSION_SECRET: process.env.SESSION_SECRET || 'default_session_secret',
   DASHBOARD_SERVICE_URL: process.env.DASHBOARD_SERVICE_URL || "http://localhost:3004",
+  INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || "fallback_internal_secret",
 };
 
 export default _config;
