@@ -47,10 +47,7 @@ function startListener() {
 
   subscribeToQueue("auction_join", async (data) => {
     console.log("[Mail Service] Received auction_join event:", data);
-    // Note: Assuming email and name are either provided in the payload or fetched here via user service
-    const { email, name = "Bidder", amount, auctionId } = data;
     
-    if (!email) return console.warn("[Mail Service] No email provided for auction_join");
     const { amount, auctionId, bidderId } = data;
     const user = await fetchUserDetails(bidderId);
     
@@ -76,9 +73,7 @@ function startListener() {
 
   subscribeToQueue("auction_won", async (data) => {
     console.log("[Mail Service] Received auction_won event:", data);
-    const { email, name = "Winner", price, auctionId } = data;
     
-    if (!email) return console.warn("[Mail Service] No email provided for auction_won");
     const { price, auctionId, winnerId } = data;
     const user = await fetchUserDetails(winnerId);
     
@@ -104,9 +99,7 @@ function startListener() {
 
   subscribeToQueue("order_placed", async (data) => {
     console.log("[Mail Service] Received order_placed event:", data);
-    const { email, name = "Customer", amount, orderId } = data;
     
-    if (!email) return console.warn("[Mail Service] No email provided for order_placed");
     const { amount, orderId, userId } = data;
     const user = await fetchUserDetails(userId);
     
@@ -132,9 +125,7 @@ function startListener() {
 
   subscribeToQueue("delivery_confirmed", async (data) => {
     console.log("[Mail Service] Received delivery_confirmed event:", data);
-    const { email, name = "User", orderId } = data;
     
-    if (!email) return console.warn("[Mail Service] No email provided for delivery_confirmed");
     const { orderId, userId } = data; // Usually we notify the buyer that their delivery is confirmed
     const user = await fetchUserDetails(userId);
     
