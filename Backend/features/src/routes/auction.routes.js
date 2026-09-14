@@ -13,10 +13,11 @@ import {
   getWonAuctionsByUser,
 } from "../controllers/auction.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { internalAuthMiddleware } from "../middlewares/internalAuth.middleware.js";
 
 const router = express.Router();
 
-router.post("/", createAuction);
+router.post("/", internalAuthMiddleware, createAuction);
 router.get("/", getAuctions);
 router.get("/enrolled/by-user", authMiddleware, getEnrolledAuctionsByUser);
 router.get("/won/by-user", authMiddleware, getWonAuctionsByUser);
@@ -30,7 +31,7 @@ router.post("/:auctionId/cancel", authMiddleware, cancelAuction);
 
 // Generic auction routes
 router.get("/:auctionId", getAuctionById);
-router.put("/:auctionId", updateAuction);
-router.delete("/:auctionId", deleteAuction);
+router.put("/:auctionId", internalAuthMiddleware, updateAuction);
+router.delete("/:auctionId", internalAuthMiddleware, deleteAuction);
 
 export default router;

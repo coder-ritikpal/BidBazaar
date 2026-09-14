@@ -91,34 +91,45 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
       auction.deleteAt = new Date(endAuctionAtTime + 24 * 60 * 60 * 1000);
       shouldSave = true;
     }
-
-    // If the auction has ended and a winner hasn't been assigned yet, determine winner.
-    if (!auction.winnerId) {
-      const winningBid = await bidModel.findOne({ auctionId: auction._id }).sort({ createdAt: -1 });
-
-      if (winningBid) {
-        auction.winnerId = winningBid.bidderId;
-        auction.winningBidId = winningBid._id;
-        shouldSave = true;
-        newlyAssignedWinner = true;
-      }
-    }
-
+    
     if (shouldSave) {
       await auction.save();
     }
 
-    if (newlyAssignedWinner) {
-      triggerAutoCreateOrder(auction);
-      
-      // Publish auction_won event
-      import('../broker/rabbit.js').then(({ publishToQueue }) => {
-        publishToQueue('auction_won', {
-          auctionId: auction._id.toString(),
-          winnerId: auction.winnerId.toString(),
-          price: auction.currentPrice
-        });
-      }).catch(err => console.error("Could not import publishToQueue", err));
+    // If the auction has ended and a winner hasn't been assigned yet, determine winner atomically.
+    if (!auction.winnerId) {
+      const winningBid = await bidModel.findOne({ auctionId: auction._id }).sort({ createdAt: -1 });
+
+      if (winningBid) {
+        // Atomically update the winner to prevent concurrent cron workers from creating duplicate orders
+        const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
+          { _id: auction._id, winnerId: { $exists: false } },
+          { 
+            $set: { 
+              winnerId: winningBid.bidderId, 
+              winningBidId: winningBid._id 
+            } 
+          },
+          { new: true }
+        );
+
+        if (atomicallyUpdatedAuction) {
+          // We successfully won the race to assign the winner
+          auction.winnerId = atomicallyUpdatedAuction.winnerId;
+          auction.winningBidId = atomicallyUpdatedAuction.winningBidId;
+          
+          triggerAutoCreateOrder(atomicallyUpdatedAuction);
+          
+          // Publish auction_won event
+          import('../broker/rabbit.js').then(({ publishToQueue }) => {
+            publishToQueue('auction_won', {
+              auctionId: atomicallyUpdatedAuction._id.toString(),
+              winnerId: atomicallyUpdatedAuction.winnerId.toString(),
+              price: atomicallyUpdatedAuction.currentPrice
+            });
+          }).catch(err => console.error("Could not import publishToQueue", err));
+        }
+      }
     }
   }
 
