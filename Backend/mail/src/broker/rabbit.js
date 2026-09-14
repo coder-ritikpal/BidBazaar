@@ -29,6 +29,15 @@ export async function subscribeToQueue(queueName, callback){
             const data=JSON.parse(msg.content.toString());
             callback(data);
             channel.ack(msg);
+            try {
+                const data=JSON.parse(msg.content.toString());
+                await callback(data);
+                channel.ack(msg);
+            } catch (error) {
+                console.error(`[RabbitMQ] Error processing message from queue ${queueName}:`, error);
+                // Nack the message so it can be requeued or dead-lettered
+                channel.nack(msg, false, false); 
+            }
         }
     });
 }
