@@ -110,6 +110,15 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
 
     if (newlyAssignedWinner) {
       triggerAutoCreateOrder(auction);
+      
+      // Publish auction_won event
+      import('../broker/rabbit.js').then(({ publishToQueue }) => {
+        publishToQueue('auction_won', {
+          auctionId: auction._id.toString(),
+          winnerId: auction.winnerId.toString(),
+          price: auction.currentPrice
+        });
+      }).catch(err => console.error("Could not import publishToQueue", err));
     }
   }
 
@@ -314,6 +323,15 @@ export const auctionBid = async (req, res) => {
         bid: newBid,
       });
     }
+    
+    // Publish auction_join event to rabbitmq
+    import('../broker/rabbit.js').then(({ publishToQueue }) => {
+      publishToQueue('auction_join', {
+        auctionId,
+        bidderId,
+        amount
+      });
+    }).catch(err => console.error("Could not import publishToQueue", err));
 
     res.status(201).json({ message: "Bid placed successfully.", bid: newBid });
   } catch (error) {

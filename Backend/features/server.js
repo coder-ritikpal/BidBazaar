@@ -5,6 +5,7 @@ import connectDB from "./src/db/db.js";
 import initializeSocket from "./src/socket/connection.js";
 import config from "./src/config/config.js";
 import startResolveAuctionsCron from "./src/cron/resolveAuctions.js";
+import { connectRabbitMQ } from "./src/broker/rabbit.js";
 
 const PORT = process.env.PORT || 3002;
 
@@ -24,6 +25,7 @@ app.set('io', io);
 
 if (process.env.NODE_ENV !== "test") {
   connectDB();
+  connectRabbitMQ();
   // Start background cron jobs
   startResolveAuctionsCron();
 }
