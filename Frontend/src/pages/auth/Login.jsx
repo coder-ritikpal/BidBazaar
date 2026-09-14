@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Import useNavigate and Link
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
 
