@@ -141,3 +141,78 @@ export const verifyPayment = async (req, res) => {
     res.status(400).json({ message: "Invalid payment signature." });
   }
 };
+
+export const razorpayWebhook = async (req, res) => {
+  try {
+    const webhookSecret = config.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error('RAZORPAY_WEBHOOK_SECRET is not configured.');
+      return res.status(500).send('Webhook secret not configured.');
+    }
+
+    const signature = req.headers['x-razorpay-signature'];
+    if (!signature) {
+      return res.status(400).send('Signature missing.');
+    }
+
+    // Verify signature using rawBody
+    const expectedSignature = crypto
+      .createHmac('sha256', webhookSecret)
+      .update(req.rawBody)
+      .digest('hex');
+
+    if (expectedSignature !== signature) {
+      return res.status(400).send('Invalid signature.');
+    }
+
+    const event = req.body.event;
+    
+    // We only care about payment.captured or order.paid
+    if (event === 'payment.captured' || event === 'order.paid') {
+      let entity;
+      if (event === 'payment.captured') {
+        entity = req.body.payload.payment.entity;
+      } else {
+        entity = req.body.payload.order.entity;
+      }
+
+      const internalOrderId = entity.notes?.orderId;
+      const userId = entity.notes?.userId;
+
+      if (internalOrderId && userId) {
+        // Authenticate as a service to the cart service
+        const internalToken = jwt.sign(
+          { id: userId, service: 'payment-service-webhook' },
+          config.INTERNAL_AUTH_TOKEN_SECRET,
+          { expiresIn: '5m' }
+        );
+
+        const cartServiceUrl = new URL(`/api/orders/${internalOrderId}/pay`, config.CART_SERVICE_URL);
+
+        const cartResponse = await fetch(cartServiceUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${internalToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!cartResponse.ok) {
+          console.error(`[Webhook] Failed to update order status for order ${internalOrderId} in cart service.`);
+          // We can return 500 to tell Razorpay to retry later
+          return res.status(500).send('Failed to update cart service.');
+        }
+
+        console.log(`[Webhook] Successfully processed ${event} for order ${internalOrderId}.`);
+      } else {
+        console.warn(`[Webhook] Missing internal orderId or userId in notes for event ${event}.`);
+      }
+    }
+
+    // Always return 200 OK to Razorpay so it doesn't retry infinitely
+    res.status(200).send('OK');
+  } catch (error) {
+    console.error('Error processing Razorpay webhook:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
