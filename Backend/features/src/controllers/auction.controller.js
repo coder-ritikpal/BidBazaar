@@ -172,8 +172,8 @@ export const createAuction = async (req, res) => {
       return res.status(400).json({ message: "Review end time must be in the future." });
     }
 
-    if (startAuctionAtDate <= reviewEndsAtDate) {
-      return res.status(400).json({ message: "Auction start time must be after the review period ends." });
+    if (startAuctionAtDate < reviewEndsAtDate) {
+      return res.status(400).json({ message: "Auction start time must be at or after the review period ends." });
     }
 
     const auction = await auctionModel.create({
@@ -486,8 +486,8 @@ export const updateAuction = async (req, res) => {
       return res.status(400).json({ message: "Review end time must be in the future." });
     }
 
-    if (nextStartAuctionAt <= nextReviewEndsAt) {
-      return res.status(400).json({ message: "Auction start time must be after the review period ends." });
+    if (nextStartAuctionAt < nextReviewEndsAt) {
+      return res.status(400).json({ message: "Auction start time must be at or after the review period ends." });
     }
 
     const { startingPrice, ...updateData } = req.body;
