@@ -294,6 +294,20 @@ export const auctionBid = async (req, res) => {
       return res.status(400).json({ message: "Bid amount must be in multiples of 10." });
     }
 
+    // Rate limiting: allow only one bid per minute per user
+    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+    const recentBid = await bidModel.findOne({ 
+      bidderId, 
+      createdAt: { $gte: oneMinuteAgo } 
+    });
+
+    if (recentBid) {
+      const waitSeconds = Math.ceil((recentBid.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
+      return res.status(429).json({ 
+        message: `You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.` 
+      });
+    }
+
     // Pre-generate the bid ID
     const bidId = new mongoose.Types.ObjectId();
 

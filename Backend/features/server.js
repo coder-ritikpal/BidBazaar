@@ -13,7 +13,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: config.FRONTEND_URL,
+    origin: function (origin, callback) {
+      // Allow any origin for WebSockets to prevent CORS issues on Render
+      // or check if it roughly matches config.FRONTEND_URL
+      callback(null, true);
+    },
     credentials: true,
   },
 });
