@@ -13,6 +13,7 @@ const _config = {
   CART_SERVICE_URL: process.env.CART_SERVICE_URL || "http://localhost:3003",
   INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || "internal_secret_for_microservices",
   MIN_AUCTION_DURATION_MINUTES: process.env.MIN_AUCTION_DURATION_MINUTES || 10,
+  RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost",
 };
 
 export default _config;
