@@ -347,7 +347,9 @@ const StartSellingPage = () => {
           return;
         }
         // If startOption is 'now', the backend will calculate startAuctionAt, so no need to send it from frontend
-        if (key === 'startAuctionAt' && formData.startOption === 'now') {
+        if (key === 'startAuctionAt') {
+          if (formData.startOption === 'now') return;
+          uploadData.append(key, new Date(value).toISOString());
           return;
         }
         uploadData.append(key, value);
