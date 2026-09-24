@@ -9,7 +9,9 @@ export async function connectRabbitMQ(){
         channel=await connection.createChannel();
         console.log("Connected to RabbitMQ");
     } catch (error) {
-        console.error("Failed to connect to RabbitMQ",error);
+        console.error("Failed to connect to RabbitMQ, retrying in 5s...",error);
+        await new Promise(res => setTimeout(res, 5000));
+        return connectRabbitMQ();
     }
 }
 

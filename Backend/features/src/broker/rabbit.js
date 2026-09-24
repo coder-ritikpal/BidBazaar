@@ -9,8 +9,9 @@ export const connectRabbitMQ = async () => {
     channel = await connection.createChannel();
     console.log('[Features Service] Connected to RabbitMQ');
   } catch (error) {
-    console.error('[Features Service] Failed to connect to RabbitMQ:', error);
-    setTimeout(connectRabbitMQ, 5000);
+    console.error('[Features Service] Failed to connect to RabbitMQ, retrying in 5s...', error);
+    await new Promise(res => setTimeout(res, 5000));
+    return connectRabbitMQ();
   }
 };
 
