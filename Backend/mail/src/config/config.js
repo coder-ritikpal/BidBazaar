@@ -4,8 +4,8 @@ dotenvConfig();
 
 const _config = {
   JWT_SECRET: process.env.JWT_SECRET,
-  APP_PASSWORD: process.env.APP_PASSWORD,
-  EMAIL_USER: process.env.EMAIL_USER,
+  APP_PASSWORD: process.env.APP_PASSWORD ? process.env.APP_PASSWORD.trim() : undefined,
+  EMAIL_USER: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : undefined,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
   PORT: process.env.PORT || 3006,
   AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
