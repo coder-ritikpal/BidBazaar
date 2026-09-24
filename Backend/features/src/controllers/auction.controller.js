@@ -88,7 +88,7 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
 
     // Ensure deleteAt is always set for ended auctions (including manual end).
     if (!auction.deleteAt) {
-      auction.deleteAt = new Date(endAuctionAtTime + 24 * 60 * 60 * 1000);
+      auction.deleteAt = new Date(endAuctionAtTime + 48 * 60 * 60 * 1000); // Hide after 48 hours
       shouldSave = true;
     }
     
@@ -212,7 +212,21 @@ export const createAuction = async (req, res) => {
 
 export const getAuctions = async (_req, res) => {
   try {
-    const auctions = await auctionModel.find({}).sort({ createdAt: -1 });
+    const now = new Date();
+    
+    // Only return auctions that are NOT cancelled, and 
+    // whose hide time (deleteAt) is either not set yet or is still in the future.
+    const auctions = await auctionModel.find({
+      $and: [
+        { cancelledAt: null },
+        { 
+          $or: [
+            { deleteAt: null },
+            { deleteAt: { $gt: now } }
+          ]
+        }
+      ]
+    }).sort({ createdAt: -1 });
 
     // Use Promise.all to ensure all toAuctionResponse calls (and potential saves) complete
     res.status(200).json({
