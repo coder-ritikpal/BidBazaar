@@ -7,6 +7,7 @@ const _config = {
   APP_PASSWORD: process.env.APP_PASSWORD,
   EMAIL_USER: process.env.EMAIL_USER,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
+  PORT: process.env.PORT || 3006,
   AUTH_SERVICE_URL: process.env.AUTH_SERVICE_URL || 'http://localhost:3001',
   INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || 'fallback_internal_secret',
 };
