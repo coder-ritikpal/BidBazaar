@@ -4,7 +4,9 @@ dotenvConfig();
 
 const _config = {
   JWT_SECRET: process.env.JWT_SECRET,
-  APP_PASSWORD: process.env.APP_PASSWORD ? process.env.APP_PASSWORD.replace(/\s+/g, '') : undefined,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN,
   EMAIL_USER: process.env.EMAIL_USER ? process.env.EMAIL_USER.trim() : undefined,
   RABBITMQ_URL: process.env.RABBITMQ_URL,
   PORT: process.env.PORT || 3006,
