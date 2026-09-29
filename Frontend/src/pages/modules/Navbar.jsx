@@ -9,6 +9,8 @@ import { getNavbarClasses } from '@/styles/modules/navbarStyles'; // Import the 
 const Navbar = () => { // No longer receives theme and toggleTheme as props
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isProfileSidebarOpen, setIsProfileSidebarOpen] = useState(false); // State for profile sidebar
+  const [isVisible, setIsVisible] = useState(true); // State for smart sticky navbar
+  const lastScrollY = useRef(0);
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
   const location = useLocation();
@@ -18,6 +20,37 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
 
   // Determine if current page is a login/register page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password';
+
+  // Smart sticky scroll: hide on scroll down, show when scrolling back up a little
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+
+      // Always show near top of page
+      if (currentScrollY <= 60) {
+        setIsVisible(true);
+      } else if (isProfileSidebarOpen || isSearchOpen) {
+        // Keep visible if search or sidebar is active
+        setIsVisible(true);
+      } else if (currentScrollY < lastScrollY.current - 8) {
+        // Scrolled back up by 8px or more: reveal navbar
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY.current + 8) {
+        // Scrolled down by 8px or more: hide navbar
+        setIsVisible(false);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isProfileSidebarOpen, isSearchOpen]);
+
+  // Always reset navbar to visible on route change
+  useEffect(() => {
+    setIsVisible(true);
+  }, [location.pathname]);
 
   // Close mobile search overlay if navigating to an auth page
   useEffect(() => {
@@ -54,7 +87,7 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
     profileIconDesktopClasses, // New: Profile icon classes for desktop
     profileSidebarOverlayClasses, // New: Overlay classes for the sidebar
     profileIconMobileClasses, // New: Profile icon classes for mobile
-  } = getNavbarClasses(theme, isAuthPage, isSearchOpen, isProfileSidebarOpen); // Pass isProfileSidebarOpen
+  } = getNavbarClasses(theme, isAuthPage, isSearchOpen, isProfileSidebarOpen, isVisible); // Pass isVisible
 
   // Focus the search input when it becomes visible
   useEffect(() => {

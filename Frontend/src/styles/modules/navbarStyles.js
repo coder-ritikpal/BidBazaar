@@ -1,4 +1,4 @@
-export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSidebarOpen) => {
+export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSidebarOpen, isVisible = true) => {
   const isDark = theme === 'dark';
 
   // This class hides desktop elements when mobile search is open.
@@ -8,10 +8,14 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
   const hideOnAuthPage = isAuthPage ? 'hidden' : '';
 
   return {
-    // Main navigation bar container
-    navClasses: `flex items-center px-4 md:px-8 py-4 shadow-md transition-colors duration-300 gap-4 ${isAuthPage ? 'justify-center' : 'justify-between'} ${
-      isDark ? 'bg-gray-900 border-b border-purple-800 text-white' : 'bg-gray-100 border-b border-gray-300 text-gray-900'
-    } relative`,
+    // Main navigation bar container (Smart Sticky: hides on scroll down, reveals on scroll back up)
+    navClasses: `sticky top-0 z-30 flex items-center px-4 md:px-8 py-4 shadow-md transition-all duration-300 ease-in-out gap-4 ${
+      isAuthPage ? 'justify-center' : 'justify-between'
+    } ${
+      isDark
+        ? 'bg-gray-900/95 backdrop-blur-md border-b border-purple-800 text-white'
+        : 'bg-gray-100/95 backdrop-blur-md border-b border-gray-300 text-gray-900'
+    } ${isVisible ? 'translate-y-0' : '-translate-y-full'}`,
 
     // Mobile search overlay
     mobileSearchOverlayClasses: `md:hidden absolute inset-0 flex items-center justify-between px-4 py-8 z-50 gap-4 ${
