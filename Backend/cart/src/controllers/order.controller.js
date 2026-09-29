@@ -1,5 +1,6 @@
 import orderModel from "../models/order.model.js";
 import config from "../config/config.js";
+import { publishToQueue } from "../broker/publisher.js";
 
 /**
  * A robust helper to fetch auction details from the 'features' (auctions) service.
@@ -246,13 +247,26 @@ export const payForOrder = async (req, res) => {
     if (String(order.winnerId) !== userId) {
       return res.status(403).json({ message: "You are not authorized to pay for this item." });
     }
+    if (order.status === 'paid') {
+      return res.status(200).json({ message: "Order is already paid.", order });
+    }
     if (order.status !== 'pending_payment') {
       return res.status(400).json({ message: `This order is not awaiting payment. Current status: ${order.status.replace('_', ' ')}.` });
     }
 
-    // In a real app, this would be triggered by a webhook from the payment service
     order.status = 'paid';
     await order.save();
+
+    // Notify Mail service
+    try {
+      await publishToQueue('order_placed', {
+        orderId: order._id.toString(),
+        userId: userId,
+        amount: order.amount
+      });
+    } catch (pubErr) {
+      console.error("[Cart Service] Failed to publish order_placed event:", pubErr);
+    }
 
     res.status(200).json({ message: "Payment successful! Your order is being processed.", order });
   } catch (error) {
@@ -329,14 +343,16 @@ export const confirmDelivery = async (req, res) => {
     order.status = 'delivered';
     await order.save();
 
-    // Publish event
-    import('../broker/publisher.js').then(({ publishToQueue }) => {
-      publishToQueue('delivery_confirmed', {
+    // Notify Mail service
+    try {
+      await publishToQueue('delivery_confirmed', {
         orderId: order._id.toString(),
         userId: userId,
         sellerId: order.sellerId.toString()
       });
-    }).catch(err => console.error(err));
+    } catch (pubErr) {
+      console.error("[Cart Service] Failed to publish delivery_confirmed event:", pubErr);
+    }
 
     res.status(200).json({ message: "Delivery confirmed. Thank you!", order });
   } catch (error) {

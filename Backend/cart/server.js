@@ -1,23 +1,23 @@
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
-import { connectAndConsume } from './src/broker/consumer.js';
 import { connectProducer } from './src/broker/publisher.js';
 import startExpireOrdersCron from './src/cron/expireOrders.js';
 
-// Only connect to the database and RabbitMQ if not in a test environment
+const PORT = process.env.PORT || 3003;
+
 if (process.env.NODE_ENV !== 'test') {
-  connectDB();
-  // Connect to RabbitMQ and start consuming messages for payment verification
-  connectAndConsume();
-  connectProducer();
-  // Start background cron jobs
-  startExpireOrdersCron();
-}
- 
- const PORT = process.env.PORT || 3003;
- 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Cart server is running on port ${PORT}`);
-  });
+  (async () => {
+    try {
+      await connectDB();
+      await connectProducer();
+      startExpireOrdersCron();
+
+      app.listen(PORT, () => {
+        console.log(`Cart server is running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error('Failed to start Cart service:', error);
+      process.exit(1);
+    }
+  })();
 }

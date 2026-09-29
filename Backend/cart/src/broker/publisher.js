@@ -9,8 +9,9 @@ export const connectProducer = async () => {
     channel = await connection.createChannel();
     console.log('[Cart Service] Connected RabbitMQ Producer');
   } catch (error) {
-    console.error('[Cart Service] Failed to connect RabbitMQ Producer:', error);
-    setTimeout(connectProducer, 5000);
+    console.error('[Cart Service] Failed to connect RabbitMQ Producer, retrying...', error);
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    return connectProducer();
   }
 };
 
