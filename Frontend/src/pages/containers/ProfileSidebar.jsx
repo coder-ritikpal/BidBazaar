@@ -81,7 +81,7 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
           className={classes.closeButtonClasses}
           aria-label="Close profile sidebar"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
       </div>
 
@@ -96,11 +96,11 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/profile')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <CircleUserRound size={18} className="text-purple-500" />
+              <div className="flex items-center gap-2.5">
+                <CircleUserRound size={15} className="text-purple-500" />
                 <span>My Profile</span>
               </div>
-              <ChevronRight size={15} className="opacity-40" />
+              <ChevronRight size={13} className="opacity-40" />
             </Link>
           </div>
         </div>
@@ -114,11 +114,11 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/your-auctions')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <Gavel size={18} className="text-amber-500" />
+              <div className="flex items-center gap-2.5">
+                <Gavel size={15} className="text-amber-500" />
                 <span>Enrolled Auctions</span>
               </div>
-              <ChevronRight size={15} className="opacity-40" />
+              <ChevronRight size={13} className="opacity-40" />
             </Link>
 
             <Link 
@@ -126,11 +126,11 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/listed-items')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <Tags size={18} className="text-emerald-500" />
+              <div className="flex items-center gap-2.5">
+                <Tags size={15} className="text-emerald-500" />
                 <span>My Listings</span>
               </div>
-              <ChevronRight size={15} className="opacity-40" />
+              <ChevronRight size={13} className="opacity-40" />
             </Link>
 
             <Link 
@@ -138,14 +138,14 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/orders')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <ShoppingCart size={18} className="text-blue-500" />
+              <div className="flex items-center gap-2.5">
+                <ShoppingCart size={15} className="text-blue-500" />
                 <span>Cart & Orders</span>
               </div>
               {cartCount > 0 ? (
                 <span className={classes.badgeClasses}>{cartCount}</span>
               ) : (
-                <ChevronRight size={15} className="opacity-40" />
+                <ChevronRight size={13} className="opacity-40" />
               )}
             </Link>
 
@@ -154,14 +154,14 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/wishlist')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <Heart size={18} className="text-rose-500" />
+              <div className="flex items-center gap-2.5">
+                <Heart size={15} className="text-rose-500" />
                 <span>Wishlist</span>
               </div>
               {wishlistCount > 0 ? (
                 <span className={classes.badgeClasses}>{wishlistCount}</span>
               ) : (
-                <ChevronRight size={15} className="opacity-40" />
+                <ChevronRight size={13} className="opacity-40" />
               )}
             </Link>
           </div>
@@ -176,15 +176,15 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.themeToggleClasses} 
               aria-label="Toggle theme"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5">
                 {theme === 'dark' ? (
-                  <Sun size={18} className="text-yellow-400" />
+                  <Sun size={15} className="text-yellow-400" />
                 ) : (
-                  <MoonStar size={18} className="text-indigo-500" />
+                  <MoonStar size={15} className="text-indigo-500" />
                 )}
                 <span>Appearance</span>
               </div>
-              <span className="text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
                 {theme === 'dark' ? 'Dark' : 'Light'}
               </span>
             </button>
@@ -194,11 +194,11 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
               className={classes.getNavLinkClasses(location.pathname === '/how-it-works')} 
               onClick={() => setIsProfileSidebarOpen(false)}
             >
-              <div className="flex items-center gap-3">
-                <HelpCircle size={18} className="text-cyan-500" />
+              <div className="flex items-center gap-2.5">
+                <HelpCircle size={15} className="text-cyan-500" />
                 <span>How It Works</span>
               </div>
-              <ChevronRight size={15} className="opacity-40" />
+              <ChevronRight size={13} className="opacity-40" />
             </Link>
           </div>
         </div>
@@ -207,7 +207,7 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
       {/* Pinned Footer with Logout */}
       <div className={classes.footerClasses}>
         <button onClick={handleLogout} className={classes.logoutButtonClasses}>
-          <LogOut size={16} />
+          <LogOut size={15} />
           <span>Sign Out</span>
         </button>
       </div>
