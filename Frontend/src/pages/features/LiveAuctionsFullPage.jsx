@@ -32,7 +32,7 @@ const LiveAuctionsFullPage = () => { // Renamed component
   const { isLoggedIn } = useAuthStore();
 
   const { wishlist, fetchWishlist, addToWishlist, removeFromWishlist } = useDashboardStore();
-  const wishlistIds = useMemo(() => new Set(wishlist.map((item) => item._id)), [wishlist]);
+  const wishlistIds = useMemo(() => new Set((wishlist || []).map((item) => String(item._id))), [wishlist]);
   useEffect(() => {
     fetchAllAuctions(); // Trigger fetching all auctions from the store
   }, [fetchAllAuctions]);
@@ -129,14 +129,16 @@ const LiveAuctionsFullPage = () => { // Renamed component
       return;
     }
 
-    const isWishlisted = wishlistIds.has(auctionId);
+    const id = String(auctionId);
+    const isWishlisted = wishlistIds.has(id);
 
     try {
       if (isWishlisted) {
-        await removeFromWishlist(auctionId);
+        await removeFromWishlist(id);
         toast.success('Removed from wishlist');
       } else {
-        await addToWishlist(auctionId);
+        const targetAuction = displayAuctions.find((a) => String(a.id || a._id) === id);
+        await addToWishlist(id, targetAuction);
         toast.success('Added to wishlist');
       }
     } catch (error) {

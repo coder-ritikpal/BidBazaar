@@ -22,9 +22,9 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
     logoutButtonClasses,
   } = getProfileSidebarClasses(theme, isProfileSidebarOpen); // Pass theme and open state
 
-  const handleLogout = () => {
-    logout();
-    setIsProfileSidebarOpen(false); // Close sidebar after logout
+  const handleLogout = async () => {
+    setIsProfileSidebarOpen(false); // Close sidebar immediately
+    await logout();
     navigate('/'); // Redirect to home page
   };
 

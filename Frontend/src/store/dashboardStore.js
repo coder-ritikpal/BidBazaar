@@ -65,31 +65,64 @@ export const useDashboardStore = create((set, get) => ({
       }
     }
   },
-  addToWishlist: async (auctionId) => {
+  addToWishlist: async (auctionId, snapshotFallback = null) => {
+    const id = String(auctionId);
+    const previousList = get().wishlist;
+
+    // If already in wishlist, avoid duplicate additions
+    if (previousList.some((item) => String(item._id) === id)) {
+      return;
+    }
+
+    // 1. Optimistic update: immediately show item as wishlisted
+    const optimisticItem = {
+      _id: id,
+      title: snapshotFallback?.title || '',
+      image: snapshotFallback?.image || snapshotFallback?.images?.[0]?.url || '',
+      currentBid: snapshotFallback?.currentBid || snapshotFallback?.currentPrice || 0,
+      price: snapshotFallback?.price || 0,
+      status: snapshotFallback?.status || 'live',
+    };
+
+    set((state) => ({
+      wishlist: [optimisticItem, ...state.wishlist],
+    }));
+
     try {
-      const response = await addToWishlistApi(auctionId);
-      const newItem = response.data.item;
+      const response = await addToWishlistApi(id);
+      const newItem = response.data?.item;
       if (newItem) {
-        // Add the new item to the start of the wishlist for immediate UI feedback
         set((state) => ({
-          wishlist: [newItem, ...state.wishlist],
+          wishlist: state.wishlist.map((item) =>
+            String(item._id) === id ? { ...newItem, _id: id } : item
+          ),
         }));
-      } else {
-        // Fallback to refetching if the new item isn't returned
-        await get().fetchWishlist();
       }
     } catch (err) {
+      // Rollback optimistic update on error
+      set({ wishlist: previousList });
       console.error('Error adding item to wishlist:', err);
       throw err;
     }
   },
   removeFromWishlist: async (auctionId) => {
+    const id = String(auctionId);
+    const previousList = get().wishlist;
+
+    // 1. Optimistic update: immediately remove item from UI
+    set((state) => ({
+      wishlist: state.wishlist.filter((item) => String(item._id) !== id),
+    }));
+
     try {
-      await removeFromWishlistApi(auctionId);
-      set((state) => ({
-        wishlist: state.wishlist.filter((item) => item._id !== auctionId),
-      }));
+      await removeFromWishlistApi(id);
     } catch (err) {
+      // If error is 404 (item was already removed in DB), keep it removed
+      if (err.response?.status === 404) {
+        return;
+      }
+      // Rollback on unexpected server/network failure
+      set({ wishlist: previousList });
       console.error('Error removing item from wishlist:', err);
       throw err;
     }

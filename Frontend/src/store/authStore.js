@@ -19,18 +19,35 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoggedIn: true, user: userData, token, loginMethod: method });
   },
   // Function to clear user and login status
-  logout: async (redirect = true) => { // Added redirect parameter
+  logout: async () => {
+    // 1. Immediately clear local storage and reset auth state so UI updates instantly
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('auth_flow');
+    sessionStorage.removeItem('redirect_after_login');
+
+    set({
+      isLoggedIn: false,
+      user: null,
+      token: null,
+      loginMethod: null,
+      showGoogleLoginToast: null,
+      loading: false,
+    });
+
+    // 2. Clear user-specific data from other stores
     try {
-      // Assuming a logout API endpoint exists on your backend
-      await api.post('/dashboard/auth/logout');
-      localStorage.removeItem('token'); // Clear token from localStorage
-      set({ isLoggedIn: false, user: null, token: null, loginMethod: null, showGoogleLoginToast: null }); // Clear state
-      // Clear user-specific data from other stores
+      useDashboardStore.getState().clearUserSpecificData();
       useCartStore.getState().clearCartData();
       useInventoryStore.getState().clearInventoryData();
+    } catch (e) {
+      console.error('Error clearing stores on logout:', e);
+    }
+
+    // 3. Optional background notification to backend (fire-and-forget, never blocks UI logout)
+    try {
+      await api.post('/dashboard/auth/logout');
     } catch (error) {
-      console.error('Error during logout:', error);
-      // Optionally handle error, e.g., show a message to the user
+      // Intentionally suppressed: client is already fully logged out
     }
   },
   // Clear user-specific data from other stores (moved here for clarity, can be called on logout)

@@ -26,8 +26,8 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuthStore();
 
-  const { wishlist, fetchWishlist, addToWishlist } = useDashboardStore();
-  const wishlistIds = useMemo(() => new Set((wishlist || []).map((item) => item._id)), [wishlist]);
+  const { wishlist, fetchWishlist, addToWishlist, removeFromWishlist } = useDashboardStore();
+  const wishlistIds = useMemo(() => new Set((wishlist || []).map((item) => String(item._id))), [wishlist]);
 
   useEffect(() => {
     fetchAllAuctions();
@@ -114,15 +114,24 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
       return;
     }
 
+    const id = String(auctionId);
+    const isWishlisted = wishlistIds.has(id);
+
     try {
-      await addToWishlist(auctionId);
-      toast.success("Added to wishlist");
+      if (isWishlisted) {
+        await removeFromWishlist(id);
+        toast.success("Removed from wishlist");
+      } else {
+        const targetAuction = displayAuctions.find((a) => String(a.id || a._id) === id);
+        await addToWishlist(id, targetAuction);
+        toast.success("Added to wishlist");
+      }
     } catch (error) {
-      console.error("Error adding to wishlist:", error);
-      if (error.response && error.response.status === 400) {
+      console.error(`Error ${isWishlisted ? 'removing from' : 'adding to'} wishlist:`, error);
+      if (error.response && error.response.status === 400 && !isWishlisted) {
         toast.info("Item already in wishlist");
       } else {
-        toast.error("Failed to add to wishlist");
+        toast.error(`Failed to ${isWishlisted ? 'remove from' : 'add to'} wishlist`);
       }
     }
   };
