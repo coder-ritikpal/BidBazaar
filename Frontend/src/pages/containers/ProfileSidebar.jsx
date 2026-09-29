@@ -1,77 +1,216 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
-import { CircleUserRound,Smile, Heart, LogOut, Sun, MoonStar, X, ShoppingCart, HelpCircle,Gavel,Tags} from 'lucide-react';
-// Assuming a utility function for classes will be created, similar to getNavbarClasses
-import { getProfileSidebarClasses } from '@/styles/containers/profileSidebarStyles'; // Placeholder
+import { useDashboardStore } from '@/store/dashboardStore';
+import { useCartStore } from '@/store/cartStore';
+import { 
+  CircleUserRound, 
+  Heart, 
+  LogOut, 
+  Sun, 
+  MoonStar, 
+  X, 
+  ShoppingCart, 
+  HelpCircle, 
+  Gavel, 
+  Tags,
+  ChevronRight
+} from 'lucide-react';
+import { getProfileSidebarClasses } from '@/styles/containers/profileSidebarStyles';
 
 export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }) => {
   const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
+  const { wishlist } = useDashboardStore();
+  const { myOrders } = useCartStore();
+  const location = useLocation();
   const navigate = useNavigate();
 
-  // Get all theme-dependent classes from the utility function
-  const {
-    sidebarClasses,
-    closeButtonClasses,
-    userInfoClasses,
-    userNameClasses,
-    navLinkClasses,
-    themeToggleButtonClasses,
-    logoutButtonClasses,
-  } = getProfileSidebarClasses(theme, isProfileSidebarOpen); // Pass theme and open state
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isProfileSidebarOpen) {
+        setIsProfileSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isProfileSidebarOpen, setIsProfileSidebarOpen]);
+
+  // Style classes
+  const classes = getProfileSidebarClasses(theme, isProfileSidebarOpen);
 
   const handleLogout = async () => {
-    setIsProfileSidebarOpen(false); // Close sidebar immediately
+    setIsProfileSidebarOpen(false);
     await logout();
-    navigate('/'); // Redirect to home page
+    navigate('/');
   };
 
+  const initials = (user?.fullName?.firstName?.[0] || user?.email?.[0] || 'U').toUpperCase();
+  const displayName = user?.fullName?.firstName 
+    ? `${user.fullName.firstName} ${user.fullName.lastName || ''}`.trim() 
+    : user?.email?.split('@')[0] || 'User';
+  const email = user?.email || '';
+
+  const wishlistCount = wishlist?.length || 0;
+  const cartCount = myOrders?.filter(o => o.status === 'pending_payment')?.length || 0;
+
   return (
-    <aside className={sidebarClasses}>
-      <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
-        <h2 className={userInfoClasses}>
-          <Smile className="inline-block mr-2" size={20} />
-          Hello, <span className={userNameClasses}>{user?.fullName?.firstName || user?.email || 'User'}</span>!
-        </h2>
+    <aside className={classes.sidebarClasses} aria-label="Profile navigation sidebar">
+      {/* Header with User Avatar */}
+      <div className={classes.headerClasses}>
+        <div className="flex items-center gap-3 min-w-0">
+          <div className={classes.avatarClasses}>
+            {initials}
+          </div>
+          <div className="min-w-0">
+            <h2 className={classes.userNameClasses}>
+              {displayName}
+            </h2>
+            {email && (
+              <p className={classes.userEmailClasses} title={email}>
+                {email}
+              </p>
+            )}
+          </div>
+        </div>
+
         <button
           onClick={() => setIsProfileSidebarOpen(false)}
-          className={closeButtonClasses}
+          className={classes.closeButtonClasses}
           aria-label="Close profile sidebar"
         >
-          <X size={24} />
+          <X size={20} />
         </button>
       </div>
-      <nav className="flex flex-col p-4 space-y-2">
-        <Link to="/profile" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <CircleUserRound size={20} className="mr-2" /> My Profile
-        </Link>
-        <Link to="/wishlist" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <Heart size={20} className="mr-2" /> Wishlist
-        </Link>
-        <Link to="/your-auctions" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <Gavel size={20} className="mr-2" />  Auctions
-        </Link>
-        <Link to="/listed-items" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <Tags size={20} className="mr-2" /> Listed Items
-        </Link>
-        <Link to="/orders" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <ShoppingCart size={20} className="mr-2" /> Cart
-        </Link>
-        <Link to="/how-it-works" className={navLinkClasses} onClick={() => setIsProfileSidebarOpen(false)}>
-          <HelpCircle size={20} className="mr-2" /> How It Works
-        </Link>
-        
-        {/* Add more links as needed */}
-        <button onClick={toggleTheme} className={themeToggleButtonClasses} title="Toggle Theme" aria-label="Toggle theme">
-          {theme === 'dark' ? <Sun className="h-5 w-5 text-yellow-500 fill-current mr-2" /> : <MoonStar className="h-5 w-5 text-blue-400 fill-current mr-2" />}
-          {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-        </button>
-        <button onClick={handleLogout} className={logoutButtonClasses}>
-          <LogOut size={20} className="mr-2" /> Logout
-        </button>
+
+      {/* Navigation Sections */}
+      <nav className={classes.navContainerClasses}>
+        {/* Section 1: Account */}
+        <div>
+          <p className={classes.sectionTitleClasses}>Account</p>
+          <div className={classes.navGroupClasses}>
+            <Link 
+              to="/profile" 
+              className={classes.getNavLinkClasses(location.pathname === '/profile')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <CircleUserRound size={18} className="text-purple-500" />
+                <span>My Profile</span>
+              </div>
+              <ChevronRight size={15} className="opacity-40" />
+            </Link>
+          </div>
+        </div>
+
+        {/* Section 2: Marketplace Activity */}
+        <div>
+          <p className={classes.sectionTitleClasses}>Activity</p>
+          <div className={classes.navGroupClasses}>
+            <Link 
+              to="/your-auctions" 
+              className={classes.getNavLinkClasses(location.pathname === '/your-auctions')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <Gavel size={18} className="text-amber-500" />
+                <span>Enrolled Auctions</span>
+              </div>
+              <ChevronRight size={15} className="opacity-40" />
+            </Link>
+
+            <Link 
+              to="/listed-items" 
+              className={classes.getNavLinkClasses(location.pathname === '/listed-items')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <Tags size={18} className="text-emerald-500" />
+                <span>My Listings</span>
+              </div>
+              <ChevronRight size={15} className="opacity-40" />
+            </Link>
+
+            <Link 
+              to="/orders" 
+              className={classes.getNavLinkClasses(location.pathname === '/orders')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <ShoppingCart size={18} className="text-blue-500" />
+                <span>Cart & Orders</span>
+              </div>
+              {cartCount > 0 ? (
+                <span className={classes.badgeClasses}>{cartCount}</span>
+              ) : (
+                <ChevronRight size={15} className="opacity-40" />
+              )}
+            </Link>
+
+            <Link 
+              to="/wishlist" 
+              className={classes.getNavLinkClasses(location.pathname === '/wishlist')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <Heart size={18} className="text-rose-500" />
+                <span>Wishlist</span>
+              </div>
+              {wishlistCount > 0 ? (
+                <span className={classes.badgeClasses}>{wishlistCount}</span>
+              ) : (
+                <ChevronRight size={15} className="opacity-40" />
+              )}
+            </Link>
+          </div>
+        </div>
+
+        {/* Section 3: Preferences & Help */}
+        <div>
+          <p className={classes.sectionTitleClasses}>Preferences</p>
+          <div className={classes.navGroupClasses}>
+            <button 
+              onClick={toggleTheme} 
+              className={classes.themeToggleClasses} 
+              aria-label="Toggle theme"
+            >
+              <div className="flex items-center gap-3">
+                {theme === 'dark' ? (
+                  <Sun size={18} className="text-yellow-400" />
+                ) : (
+                  <MoonStar size={18} className="text-indigo-500" />
+                )}
+                <span>Appearance</span>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-medium">
+                {theme === 'dark' ? 'Dark' : 'Light'}
+              </span>
+            </button>
+
+            <Link 
+              to="/how-it-works" 
+              className={classes.getNavLinkClasses(location.pathname === '/how-it-works')} 
+              onClick={() => setIsProfileSidebarOpen(false)}
+            >
+              <div className="flex items-center gap-3">
+                <HelpCircle size={18} className="text-cyan-500" />
+                <span>How It Works</span>
+              </div>
+              <ChevronRight size={15} className="opacity-40" />
+            </Link>
+          </div>
+        </div>
       </nav>
+
+      {/* Pinned Footer with Logout */}
+      <div className={classes.footerClasses}>
+        <button onClick={handleLogout} className={classes.logoutButtonClasses}>
+          <LogOut size={16} />
+          <span>Sign Out</span>
+        </button>
+      </div>
     </aside>
   );
 };
