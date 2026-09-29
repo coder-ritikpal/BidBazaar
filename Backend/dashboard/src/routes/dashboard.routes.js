@@ -85,7 +85,8 @@ router.get("/profile/me", authMiddleware, getProfile);               // Requires
 router.put("/profile/me", authMiddleware, updateProfile);             // Requires authentication
 router.post("/auth/register", registerUserBFF); // No authMiddleware needed for registration
 router.post("/auth/login", loginUserBFF);     // No authMiddleware needed for login
-router.post("/auth/logout", authMiddleware, logoutUserBFF); // Logout requires a valid token to clear it
+router.post("/auth/logout", logoutUserBFF);
+
 router.get("/auth/google", googleAuthBFF);
 router.get("/auth/google/callback", googleAuthCallbackBFF); // No authMiddleware, this is the callback
 router.get("/users/:userId/public", getUserPublicProfileBFF); // Public user profile

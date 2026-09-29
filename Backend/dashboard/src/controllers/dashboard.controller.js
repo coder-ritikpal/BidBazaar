@@ -252,7 +252,7 @@ export const getWishlist = async (req, res) => {
 
 export const addToWishlist = async (req, res) => {
   const userId = req.user?.id;
-  const { auctionId } = req.body || {};
+  const { auctionId, snapshot: clientSnapshot } = req.body || {};
 
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized. Please log in." });
@@ -263,7 +263,20 @@ export const addToWishlist = async (req, res) => {
   }
 
   try {
-    const snapshot = await fetchAuctionSnapshot(auctionId);
+    let snapshot = await fetchAuctionSnapshot(auctionId);
+
+    // Fallback to client snapshot if features service is cold starting
+    if (!snapshot && clientSnapshot) {
+      snapshot = {
+        title: clientSnapshot.title || "",
+        images: clientSnapshot.images || [],
+        image: clientSnapshot.image || clientSnapshot.images?.[0]?.url || "",
+        currentBid: clientSnapshot.currentBid ?? clientSnapshot.currentPrice ?? 0,
+        startingBid: clientSnapshot.startingBid ?? clientSnapshot.price ?? 0,
+        price: clientSnapshot.price ?? 0,
+        status: clientSnapshot.status || "live",
+      };
+    }
 
     if (!snapshot) {
       return res.status(404).json({ message: "Auction to add to wishlist not found." });
@@ -275,13 +288,15 @@ export const addToWishlist = async (req, res) => {
       snapshot,
     });
 
+    const createdObj = created.toObject ? created.toObject() : created;
+
     res.status(201).json({
       message: "Added to wishlist.",
-      item: { _id: String(created.auctionId), ...(created.snapshot || {}) },
+      item: { _id: String(created.auctionId), ...(createdObj.snapshot || {}) },
     });
   } catch (error) {
     if (error?.code === 11000) {
-      return res.status(400).json({ message: "Item already in wishlist" });
+      return res.status(200).json({ message: "Item already in wishlist" });
     }
     res.status(500).json({ message: "Failed to add to wishlist.", error: error.message });
   }
@@ -300,10 +315,7 @@ export const removeFromWishlist = async (req, res) => {
   }
 
   try {
-    const deleted = await wishlistModel.findOneAndDelete({ userId, auctionId });
-    if (!deleted) {
-      return res.status(404).json({ message: "Wishlist item not found" });
-    }
+    await wishlistModel.findOneAndDelete({ userId, auctionId });
     res.status(200).json({ message: "Removed from wishlist." });
   } catch (error) {
     res.status(500).json({ message: "Failed to remove from wishlist.", error: error.message });
