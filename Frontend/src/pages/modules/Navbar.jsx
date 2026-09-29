@@ -85,7 +85,6 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
     joinButtonClasses,
     loginIconClasses, // Add loginIconClasses back to destructuring
     profileIconDesktopClasses, // New: Profile icon classes for desktop
-    profileSidebarOverlayClasses, // New: Overlay classes for the sidebar
     profileIconMobileClasses, // New: Profile icon classes for mobile
   } = getNavbarClasses(theme, isAuthPage, isSearchOpen, isProfileSidebarOpen, isVisible); // Pass isVisible
 
@@ -105,114 +104,110 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
   };
 
   return (
-    <nav className={navClasses}>
-      {/* Mobile Search Overlay */}
-      {/* Ensure overlay doesn't show on auth pages */}
-      {isSearchOpen && !isAuthPage && ( // Increased vertical padding (py-4 to py-8) and gap (gap-2 to gap-4) for better spacing
-        <div className={mobileSearchOverlayClasses}>
-          <input
-            as="form"
-            onSubmit={handleSearch}
-            ref={searchInputRef}
-            type="text"
-            placeholder="Search..."
-            className={mobileSearchInputClasses}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <button
-            className={mobileSearchCloseButtonClasses}
-            title="Close search"
-            aria-label="Close search"
-            onClick={() => setIsSearchOpen(false)}
-          >
-            ✖️
-          </button>
-        </div>
-      )}
-
-      {/* Left Side: Logo Image */}
-      <Link to="/" className={logoLinkClasses}>
-        <img src="/icon.png" alt="BidBazaar Logo" className={logoImageClasses} />
-        <h1 className={logoTextClasses}>BidBazaar</h1>
-      </Link>
-
-      {/* Middle: Search Bar (Desktop only, or mobile trigger) */}
-      <div className={desktopSearchBarContainerClasses}>
-        <form onSubmit={handleSearch} className="w-full max-w-md">
-          <input
-            type="text"
-            placeholder="Search for items..."
-            className={desktopSearchInputClasses}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </form>
-      </div>
-
-      {/* Right Side: Buttons */}
-      <div className={rightSideButtonsContainerClasses}>
-        <Link to="/help" className={`${helpButtonClasses} hidden md:block`} aria-label="Help">
-          Help
-        </Link>
-        <button
-          className={mobileSearchTriggerButtonClasses}
-          title="Search"
-          aria-label="Open search"
-          onClick={() => setIsSearchOpen(true)} // Use Lucide Search icon
-        >
-          <Search className="h-6 w-6 text-purple-500 " />
-        </button>
-
-        {/* Theme toggle button hidden on mobile, shown on desktop, but only if not logged in */}
-        {!isLoggedIn && (
-          <button onClick={toggleTheme} className={`${themeToggleButtonClasses} hidden md:block`} title="Toggle Theme" aria-label="Toggle theme">
-            {theme === 'dark' ? <Sun className="h-7 w-7 text-yellow-500 fill-current" /> : <MoonStar className="h-7 w-7 text-blue-800 fill-current" />}
-          </button>
-        )}
-
-        {isLoggedIn ? ( // Show Profile icon and Logout if logged in
-          <>
-            {/* Profile icon for bigger screens */}
-            {/* Changed to a button to open the sidebar on desktop as well */}
-            <button
-              onClick={() => setIsProfileSidebarOpen(true)}
-              className={profileIconDesktopClasses}
-              title="Open Profile Menu" aria-label="Open Profile Menu">
-              <User />
-            </button>
-            {/* Removed user name from Navbar, it will be shown in ProfileSidebar */}
-            <button
-              onClick={() => setIsProfileSidebarOpen(true)}
-              className={profileIconMobileClasses}
-              title="Open Profile Menu"
-              aria-label="Open Profile Menu"
-            >
-              <User /> {/* Already a Lucide icon */}
-            </button>
-
-            {/* Profile Sidebar Overlay */}
-            <div
-              className={profileSidebarOverlayClasses}
-              onClick={() => setIsProfileSidebarOpen(false)}
-              aria-hidden={!isProfileSidebarOpen} // Hide from screen readers when not visible
-            ></div>
-
-            {/* Render the ProfileSidebar component */}
-            <ProfileSidebar
-              isProfileSidebarOpen={isProfileSidebarOpen}
-              setIsProfileSidebarOpen={setIsProfileSidebarOpen}
+    <>
+      <nav className={navClasses}>
+        {/* Mobile Search Overlay */}
+        {/* Ensure overlay doesn't show on auth pages */}
+        {isSearchOpen && !isAuthPage && ( // Increased vertical padding (py-4 to py-8) and gap (gap-2 to gap-4) for better spacing
+          <div className={mobileSearchOverlayClasses}>
+            <input
+              as="form"
+              onSubmit={handleSearch}
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search..."
+              className={mobileSearchInputClasses}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </>
-        ) : ( // Show Join/Login if not logged in
-          <>
-            <Link to="/login" className={joinButtonClasses}>Join</Link>
-            <Link to="/login" className={loginIconClasses} title="Login" aria-label="Login"><User /></Link>
-          </>
+            <button
+              className={mobileSearchCloseButtonClasses}
+              title="Close search"
+              aria-label="Close search"
+              onClick={() => setIsSearchOpen(false)}
+            >
+              ✖️
+            </button>
+          </div>
         )}
-      </div>
-    </nav>
-  )
+
+        {/* Left Side: Logo Image */}
+        <Link to="/" className={logoLinkClasses}>
+          <img src="/icon.png" alt="BidBazaar Logo" className={logoImageClasses} />
+          <h1 className={logoTextClasses}>BidBazaar</h1>
+        </Link>
+
+        {/* Middle: Search Bar (Desktop only, or mobile trigger) */}
+        <div className={desktopSearchBarContainerClasses}>
+          <form onSubmit={handleSearch} className="w-full max-w-md">
+            <input
+              type="text"
+              placeholder="Search for items..."
+              className={desktopSearchInputClasses}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </form>
+        </div>
+
+        {/* Right Side: Buttons */}
+        <div className={rightSideButtonsContainerClasses}>
+          <Link to="/help" className={`${helpButtonClasses} hidden md:block`} aria-label="Help">
+            Help
+          </Link>
+          <button
+            className={mobileSearchTriggerButtonClasses}
+            title="Search"
+            aria-label="Open search"
+            onClick={() => setIsSearchOpen(true)} // Use Lucide Search icon
+          >
+            <Search className="h-6 w-6 text-purple-500 " />
+          </button>
+
+          {/* Theme toggle button hidden on mobile, shown on desktop, but only if not logged in */}
+          {!isLoggedIn && (
+            <button onClick={toggleTheme} className={`${themeToggleButtonClasses} hidden md:block`} title="Toggle Theme" aria-label="Toggle theme">
+              {theme === 'dark' ? <Sun className="h-7 w-7 text-yellow-500 fill-current" /> : <MoonStar className="h-7 w-7 text-blue-800 fill-current" />}
+            </button>
+          )}
+
+          {isLoggedIn ? ( // Show Profile icon and Logout if logged in
+            <>
+              {/* Profile icon for bigger screens */}
+              <button
+                onClick={() => setIsProfileSidebarOpen(true)}
+                className={profileIconDesktopClasses}
+                title="Open Profile Menu" aria-label="Open Profile Menu">
+                <User />
+              </button>
+              {/* Profile icon for mobile */}
+              <button
+                onClick={() => setIsProfileSidebarOpen(true)}
+                className={profileIconMobileClasses}
+                title="Open Profile Menu"
+                aria-label="Open Profile Menu"
+              >
+                <User /> {/* Already a Lucide icon */}
+              </button>
+            </>
+          ) : ( // Show Join/Login if not logged in
+            <>
+              <Link to="/login" className={joinButtonClasses}>Join</Link>
+              <Link to="/login" className={loginIconClasses} title="Login" aria-label="Login"><User /></Link>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Render the ProfileSidebar component outside nav to prevent CSS transform containment */}
+      {isLoggedIn && (
+        <ProfileSidebar
+          isProfileSidebarOpen={isProfileSidebarOpen}
+          setIsProfileSidebarOpen={setIsProfileSidebarOpen}
+        />
+      )}
+    </>
+  );
 }
 
 export default Navbar

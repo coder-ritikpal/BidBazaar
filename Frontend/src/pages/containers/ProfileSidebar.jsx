@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/authStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -38,6 +39,17 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isProfileSidebarOpen, setIsProfileSidebarOpen]);
 
+  // Lock body scroll when sidebar is open
+  useEffect(() => {
+    if (isProfileSidebarOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isProfileSidebarOpen]);
+
   // Style classes
   const classes = getProfileSidebarClasses(theme, isProfileSidebarOpen);
 
@@ -56,8 +68,24 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
   const wishlistCount = wishlist?.length || 0;
   const cartCount = myOrders?.filter(o => o.status === 'pending_payment')?.length || 0;
 
-  return (
-    <aside className={classes.sidebarClasses} aria-label="Profile navigation sidebar">
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      className={`fixed inset-0 z-50 transition-all duration-300 ${
+        isProfileSidebarOpen ? 'visible pointer-events-auto' : 'invisible pointer-events-none'
+      }`}
+    >
+      {/* Full-screen backdrop blur overlay */}
+      <div
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+          isProfileSidebarOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+        onClick={() => setIsProfileSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      <aside className={classes.sidebarClasses} aria-label="Profile navigation sidebar">
       {/* Header with User Avatar */}
       <div className={classes.headerClasses}>
         <div className="flex items-center gap-3 min-w-0">
@@ -212,5 +240,7 @@ export const ProfileSidebar = ({ isProfileSidebarOpen, setIsProfileSidebarOpen }
         </button>
       </div>
     </aside>
-  );
+  </div>,
+  document.body
+);
 };
