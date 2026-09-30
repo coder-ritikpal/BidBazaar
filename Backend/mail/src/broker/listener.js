@@ -148,5 +148,89 @@ function startListener() {
 
     await sendEmail(email, "Delivery Confirmed! ✅", `Order ${orderId} has been delivered.`, template);
   });
+  subscribeToQueue("product_listed", async (data) => {
+    console.log("[Mail Service] Received product_listed event:", data);
+    const { sellerId, title, price } = data;
+    const user = await fetchUserDetails(sellerId);
+    if (!user || !user.email) return console.warn(`[Mail Service] No email resolved for sellerId ${sellerId} on product_listed`);
+
+    const name = user.fullName?.firstName || "Seller";
+    const template = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h1 style="color: #2563eb;">🏷️ Product Listed!</h1>
+    <p>Hello <strong>${name}</strong>,</p>
+    <p>Your product <strong>${title}</strong> has been successfully listed at Rs. ${price}.</p>
+    <p>Good luck with your auction!</p>
+    <br/>
+    <p>Cheers,<br/><strong>The BidBazaar Team</strong></p>
+  </div>
+`;
+    await sendEmail(user.email, "Product Listed Successfully! 🏷️", `Your product ${title} was listed.`, template);
+  });
+
+  subscribeToQueue("product_deleted", async (data) => {
+    console.log("[Mail Service] Received product_deleted event:", data);
+    const { sellerId, title } = data;
+    const user = await fetchUserDetails(sellerId);
+    if (!user || !user.email) return console.warn(`[Mail Service] No email resolved for sellerId ${sellerId} on product_deleted`);
+
+    const name = user.fullName?.firstName || "Seller";
+    const template = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h1 style="color: #dc2626;">🗑️ Product Deleted!</h1>
+    <p>Hello <strong>${name}</strong>,</p>
+    <p>Your product <strong>${title}</strong> has been successfully deleted.</p>
+    <br/>
+    <p>Cheers,<br/><strong>The BidBazaar Team</strong></p>
+  </div>
+`;
+    await sendEmail(user.email, "Product Deleted 🗑️", `Your product ${title} was deleted.`, template);
+  });
+
+  subscribeToQueue("auction_live", async (data) => {
+    console.log("[Mail Service] Received auction_live event:", data);
+    const { sellerId, title, startingPrice } = data;
+    const user = await fetchUserDetails(sellerId);
+    if (!user || !user.email) return console.warn(`[Mail Service] No email resolved for sellerId ${sellerId} on auction_live`);
+
+    const name = user.fullName?.firstName || "Seller";
+    const template = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h1 style="color: #16a34a;">🔥 Auction is Live!</h1>
+    <p>Hello <strong>${name}</strong>,</p>
+    <p>The auction for your product <strong>${title}</strong> is now LIVE starting at Rs. ${startingPrice}.</p>
+    <p>We'll notify you when it ends!</p>
+    <br/>
+    <p>Cheers,<br/><strong>The BidBazaar Team</strong></p>
+  </div>
+`;
+    await sendEmail(user.email, "Your Auction is Live! 🔥", `Auction for ${title} is live.`, template);
+  });
+
+  subscribeToQueue("auction_ended", async (data) => {
+    console.log("[Mail Service] Received auction_ended event:", data);
+    const { sellerId, title, currentPrice, winnerId } = data;
+    const user = await fetchUserDetails(sellerId);
+    if (!user || !user.email) return console.warn(`[Mail Service] No email resolved for sellerId ${sellerId} on auction_ended`);
+
+    const name = user.fullName?.firstName || "Seller";
+    let bodyText = `<p>The auction for your product <strong>${title}</strong> has ended!</p>`;
+    if (winnerId) {
+       bodyText += `<p>It sold for <strong>Rs. ${currentPrice}</strong>.</p>`;
+    } else {
+       bodyText += `<p>Unfortunately, it ended without a winner.</p>`;
+    }
+
+    const template = `
+  <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+    <h1 style="color: #9333ea;">🛑 Auction Ended!</h1>
+    <p>Hello <strong>${name}</strong>,</p>
+    ${bodyText}
+    <br/>
+    <p>Cheers,<br/><strong>The BidBazaar Team</strong></p>
+  </div>
+`;
+    await sendEmail(user.email, "Your Auction has Ended! 🛑", `Auction for ${title} ended.`, template);
+  });
 }
 export default startListener;
