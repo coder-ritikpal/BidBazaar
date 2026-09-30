@@ -33,6 +33,8 @@ const auctionSchema = new mongoose.Schema({
   endAuctionAt: { type: Date, default: null }, // To allow manual ending
   orderCreatedAt: { type: Date, default: null },
   deleteAt: { type: Date, default: null },
+  isLiveEventPublished: { type: Boolean, default: false },
+  isEndedEventPublished: { type: Boolean, default: false },
 }, { timestamps: true });
 
 const auctionModel = mongoose.model("auction", auctionSchema);

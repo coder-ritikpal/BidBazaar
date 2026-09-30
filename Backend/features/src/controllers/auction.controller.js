@@ -81,19 +81,25 @@ export const getAuctionStatus = (auction, now = Date.now()) => { // Exported for
 export const toAuctionResponse = async (auction) => { // Made async to allow await for save()
   const endAuctionAtTime = getAuctionEndTime(auction).getTime();
   const currentStatus = getAuctionStatus(auction);
+  let shouldSave = false;
+
+  if (currentStatus === "live" && !auction.isLiveEventPublished) {
+    auction.isLiveEventPublished = true;
+    shouldSave = true;
+    import('../broker/rabbit.js').then(({ publishToQueue }) => {
+      publishToQueue('auction_live', {
+        sellerId: auction.sellerId.toString(),
+        title: auction.title,
+        startingPrice: auction.startingPrice
+      });
+    }).catch(err => console.error("Could not import publishToQueue", err));
+  }
 
   if (currentStatus === "ended" && !auction.cancelledAt) {
-    let shouldSave = false;
-    let newlyAssignedWinner = false;
-
     // Ensure deleteAt is always set for ended auctions (including manual end).
     if (!auction.deleteAt) {
       auction.deleteAt = new Date(endAuctionAtTime + 48 * 60 * 60 * 1000); // Hide after 48 hours
       shouldSave = true;
-    }
-    
-    if (shouldSave) {
-      await auction.save();
     }
 
     // If the auction has ended and a winner hasn't been assigned yet, determine winner atomically.
@@ -131,6 +137,23 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
         }
       }
     }
+
+    if (!auction.isEndedEventPublished) {
+      auction.isEndedEventPublished = true;
+      shouldSave = true;
+      import('../broker/rabbit.js').then(({ publishToQueue }) => {
+        publishToQueue('auction_ended', {
+          sellerId: auction.sellerId.toString(),
+          title: auction.title,
+          currentPrice: auction.currentPrice,
+          winnerId: auction.winnerId ? auction.winnerId.toString() : null
+        });
+      }).catch(err => console.error("Could not import publishToQueue", err));
+    }
+  }
+
+  if (shouldSave) {
+    await auction.save();
   }
 
   return {
