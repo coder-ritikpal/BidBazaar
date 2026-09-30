@@ -2,6 +2,7 @@ import productModel from "../models/product.model.js";
 import { uploadProductImages } from "../services/imagekit.service.js";
 import { createAuctionForProduct, updateAuctionForProduct, deleteAuctionForProduct } from "../services/auction.service.js";
 import config from "../config/config.js";
+import { publishToQueue } from "../broker/rabbit.js";
  
 const REVIEW_WINDOW_MS = (config.REVIEW_WINDOW_MINUTES || 30) * 60 * 1000;
 const MIN_AUCTION_DURATION_MS = (config.MIN_AUCTION_DURATION_MINUTES || 5) * 60 * 1000;
@@ -230,6 +231,12 @@ export const createProduct = async (req, res) => {
       });
     }
 
+    publishToQueue("product_listed", {
+      sellerId: product.sellerId.toString(),
+      title: product.title,
+      price: product.price
+    }).catch(err => console.error("Failed to publish product_listed event:", err));
+
     res.status(201).json({
       message: "Product created successfully",
       product: toProductResponse(product),
@@ -417,6 +424,11 @@ export const deleteProduct = async (req, res) => {
         console.error(`Inventory Service: Failed to delete auction ${product.auctionId} for product ${product._id}:`, auctionError.message);
       }
     }
+
+    publishToQueue("product_deleted", {
+      sellerId: product.sellerId.toString(),
+      title: product.title
+    }).catch(err => console.error("Failed to publish product_deleted event:", err));
 
     res.status(200).json({
       message: "Product deleted successfully",

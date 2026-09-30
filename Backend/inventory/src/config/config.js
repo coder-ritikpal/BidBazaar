@@ -18,6 +18,7 @@ const _config = {
   MIN_AUCTION_DURATION_MINUTES: process.env.MIN_AUCTION_DURATION_MINUTES || 10,
   AUCTIONS_SERVICE_URL: process.env.AUCTIONS_SERVICE_URL || "http://localhost:3002",
   INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || "fallback_internal_secret",
+  RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost",
 };
 
 export default Object.freeze(_config);

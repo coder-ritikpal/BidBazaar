@@ -16,6 +16,7 @@
   "type": "module",
   "dependencies": {
     "@imagekit/nodejs": "^7.11.0",
+    "amqplib": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.4.1",
