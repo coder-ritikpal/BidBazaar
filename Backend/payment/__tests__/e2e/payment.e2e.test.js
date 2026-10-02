@@ -31,20 +31,43 @@ describe('Payment API E2E', () => {
   });
 
   describe('POST /api/payments/create-order', () => {
+    beforeEach(() => {
+      global.fetch.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          order: {
+            winnerId: 'user-1',
+            status: 'pending_payment',
+            amount: 100
+          }
+        })
+      });
+    });
+
     test('rejects unauthenticated requests', async () => {
-      const res = await request(app).post('/api/payments/create-order').send({ amount: 100, orderId: 'o1' });
+      const res = await request(app).post('/api/payments/create-order').send({ orderId: 'o1' });
       expect(res.status).toBe(401);
     });
 
     test('validates input', async () => {
-      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ amount: -10, orderId: 'o1' });
+      global.fetch.mockResolvedValueOnce({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          order: {
+            winnerId: 'user-1',
+            status: 'pending_payment',
+            amount: -10
+          }
+        })
+      });
+      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ orderId: 'o1' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Invalid amount provided.');
+      expect(res.body.message).toBe('Invalid order amount.');
     });
 
     test('creates an order through the mocked Razorpay client', async () => {
       razorpayOrders.create.mockResolvedValueOnce({ id: 'pay_order_1', amount: 20500 });
-      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ amount: 100, orderId: 'o1' });
+      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ orderId: 'o1' });
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ id: 'pay_order_1', amount: 20500 });
       expect(razorpayOrders.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 20500, receipt: 'receipt_order_o1' }));
@@ -52,7 +75,7 @@ describe('Payment API E2E', () => {
 
     test('returns a service error when Razorpay fails', async () => {
       razorpayOrders.create.mockRejectedValueOnce(new Error('Razorpay unavailable'));
-      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ amount: 100, orderId: 'o1' });
+      const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ orderId: 'o1' });
       expect(res.status).toBe(500);
       expect(res.body.message).toBe('Failed to create payment order.');
     });

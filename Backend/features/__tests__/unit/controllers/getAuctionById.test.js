@@ -156,6 +156,14 @@ describe("getAuctionById", () => {
       deleteAt: null, // deleteAt not yet set
       toObject: jest.fn().mockReturnThis(),
       save: jest.fn().mockResolvedValue(true),
+      constructor: {
+        findOneAndUpdate: jest.fn().mockResolvedValue({
+          _id: req.params.auctionId,
+          winnerId: "winner123",
+          winningBidId: "winbid123",
+          currentPrice: 100
+        }),
+      },
     };
 
     const winningBid = {

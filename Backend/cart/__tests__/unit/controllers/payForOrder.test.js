@@ -101,28 +101,33 @@ describe("payForOrder Controller", () => {
 
     mockOrderModel.findById.mockResolvedValue({
       ...mockOrder,
-      status: "paid",
+      status: "shipped",
     });
 
     await payForOrder(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "This order is not awaiting payment. Current status: shipped.",
+    });
   });
 
-  it("should return 400 if order is already paid", async () => {
+  it("should return 200 if order is already paid", async () => {
     req.params.orderId = mockOrderId;
 
-    mockOrderModel.findById.mockResolvedValue({
+    const paidOrder = {
       ...mockOrder,
       status: "paid",
-    });
+    };
+    mockOrderModel.findById.mockResolvedValue(paidOrder);
 
     await payForOrder(req, res, next);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(200);
 
     expect(res.json).toHaveBeenCalledWith({
-      message: "This order is not awaiting payment. Current status: paid.",
+      message: "Order is already paid.",
+      order: paidOrder,
     });
   });
 });

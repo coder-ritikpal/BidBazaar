@@ -113,7 +113,7 @@ describe("Dashboard BFF", () => {
       .set("Authorization", `Bearer ${tokenFor()}`)
       .send({ auctionId: String(auctionId) });
 
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: "Item already in wishlist" });
   });
 
@@ -143,8 +143,8 @@ describe("Dashboard BFF", () => {
       .delete(`/api/dashboard/wishlist/${auctionId}`)
       .set("Authorization", `Bearer ${tokenFor()}`);
 
-    expect(res.status).toBe(404);
-    expect(res.body).toEqual({ message: "Wishlist item not found" });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ message: "Removed from wishlist." });
   });
 
   test("forwards public auction requests without requiring authentication", async () => {

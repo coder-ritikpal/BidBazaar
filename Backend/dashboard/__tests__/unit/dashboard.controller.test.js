@@ -114,11 +114,11 @@ describe("dashboard controller", () => {
 
     await addToWishlist({ user: { id: "user-1" }, body: { auctionId: "auction-1" } }, res);
 
-    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ message: "Item already in wishlist" });
   });
 
-  test("removeFromWishlist returns not found when no item was deleted", async () => {
+  test("removeFromWishlist returns 200 when no item was deleted", async () => {
     wishlistModel.findOneAndDelete.mockResolvedValue(null);
     const res = makeResponse();
 
@@ -131,7 +131,7 @@ describe("dashboard controller", () => {
       userId: "user-1",
       auctionId: "auction-1",
     });
-    expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({ message: "Wishlist item not found" });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ message: "Removed from wishlist." });
   });
 });

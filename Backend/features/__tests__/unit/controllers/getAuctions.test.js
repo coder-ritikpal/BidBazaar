@@ -23,6 +23,12 @@ jest.unstable_mockModule("../../../src/services/cart.service.js", () => ({
   createOrderForAuction: jest.fn(),
 }));
 
+jest.unstable_mockModule("../../../src/cache/redis.js", () => ({
+  getCache: jest.fn().mockResolvedValue(null),
+  setCache: jest.fn().mockResolvedValue(true),
+  clearCache: jest.fn().mockResolvedValue(true),
+}));
+
 jest.unstable_mockModule("../../../src/config/config.js", () => ({
   default: {
     MIN_AUCTION_DURATION_MINUTES: 5,
@@ -60,6 +66,7 @@ describe("getAuctions", () => {
     const auctions = [
       {
         _id: "1",
+        sellerId: "seller123",
         title: "Auction 1",
         startAuctionAt: new Date(Date.now() - 10000),
         auctionDuration: 1,
@@ -72,9 +79,11 @@ describe("getAuctions", () => {
             currentPrice: this.currentPrice,
           };
         },
+        save: jest.fn().mockResolvedValue(true),
       },
       {
         _id: "2",
+        sellerId: "seller456",
         title: "Auction 2",
         startAuctionAt: new Date(Date.now() - 10000),
         auctionDuration: 1,
@@ -87,6 +96,7 @@ describe("getAuctions", () => {
             currentPrice: this.currentPrice,
           };
         },
+        save: jest.fn().mockResolvedValue(true),
       },
     ];
 
@@ -94,7 +104,14 @@ describe("getAuctions", () => {
 
     await getAuctions({}, res);
 
-    expect(findMock).toHaveBeenCalledWith({});
+    expect(findMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        $and: expect.arrayContaining([
+          { cancelledAt: null },
+          expect.objectContaining({ $or: expect.any(Array) }),
+        ]),
+      })
+    );
 
     expect(sortMock).toHaveBeenCalledWith({
       createdAt: -1,

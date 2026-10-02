@@ -25,7 +25,8 @@ describe("updateAuction", () => {
     auctionDurationUnit: "days",
     startingPrice: 100,
     currentPrice: 100,
-    startAuctionAt: new Date(),
+    reviewEndsAt: new Date(Date.now() + 100000),
+    startAuctionAt: new Date(Date.now() + 200000),
     toObject: jest.fn().mockReturnThis(),
     save: jest.fn().mockImplementation(function () {
       return Promise.resolve(this);

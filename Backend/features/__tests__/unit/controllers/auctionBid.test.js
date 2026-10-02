@@ -2,17 +2,21 @@ import { jest } from "@jest/globals";
 import mongoose from "mongoose";
 
 const findByIdMock = jest.fn();
+const findOneAndUpdateMock = jest.fn();
 const bidCreateMock = jest.fn();
+const bidFindOneMock = jest.fn();
 
 jest.unstable_mockModule("../../../src/models/auction.model.js", () => ({
   default: {
     findById: findByIdMock,
+    findOneAndUpdate: findOneAndUpdateMock,
   },
 }));
 
 jest.unstable_mockModule("../../../src/models/bid.model.js", () => ({
   default: {
     create: bidCreateMock,
+    findOne: bidFindOneMock,
   },
 }));
 
@@ -65,24 +69,33 @@ describe("auctionBid", () => {
     const auction = {
       ...liveAuction,
       bids: [],
-      save: jest.fn().mockResolvedValue(true),
     };
     findByIdMock.mockResolvedValue(auction);
+    bidFindOneMock.mockResolvedValue(null);
+    findOneAndUpdateMock.mockResolvedValue({
+      ...auction,
+      currentPrice: 1500,
+    });
     bidCreateMock.mockResolvedValue({ _id: "bid123", bidderId, amount: 1500 });
 
     await auctionBid(req, res);
 
     expect(findByIdMock).toHaveBeenCalledWith(auctionId);
+    expect(bidFindOneMock).toHaveBeenCalled();
+    expect(findOneAndUpdateMock).toHaveBeenCalledWith(
+      { _id: auctionId, currentPrice: { $lt: 1500 } },
+      { $set: { currentPrice: 1500 }, $push: { bids: expect.anything() } },
+      { new: true }
+    );
     expect(bidCreateMock).toHaveBeenCalledWith({
+      _id: expect.anything(),
       auctionId,
       bidderId,
       amount: 1500,
     });
-    expect(auction.save).toHaveBeenCalled();
-    expect(auction.currentPrice).toBe(1500);
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({ message: "Bid placed successfully." }),
+      expect.objectContaining({ message: "Bid placed successfully." })
     );
   });
 
@@ -90,7 +103,6 @@ describe("auctionBid", () => {
     const auction = {
       ...liveAuction,
       bids: [],
-      save: jest.fn().mockResolvedValue(true),
     };
     const newBid = {
       _id: "bid123",
@@ -98,6 +110,11 @@ describe("auctionBid", () => {
       amount: 1500,
     };
     findByIdMock.mockResolvedValue(auction);
+    bidFindOneMock.mockResolvedValue(null);
+    findOneAndUpdateMock.mockResolvedValue({
+      ...auction,
+      currentPrice: 1500,
+    });
     bidCreateMock.mockResolvedValue(newBid);
 
     await auctionBid(req, res);
