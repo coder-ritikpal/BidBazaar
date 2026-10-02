@@ -196,7 +196,7 @@ const LiveAuctionsFullPage = () => { // Renamed component
                 return (
                 <Link to={`/auction/${auctionId}`} key={auctionId} className={classes.auctionCard}>
                   <div className={classes.cardImageWrapper}>
-                    <img src={auction.images?.[0]?.url} alt={auction.title} className={classes.cardImage} />
+                    <img src={auction.images?.[0]?.url} alt={auction.title} className={classes.cardImage} loading="lazy" />
                     <span className={getStatusBadgeClasses(auction.status)}>
                       {getStatusLabel(auction.status)}
                     </span>

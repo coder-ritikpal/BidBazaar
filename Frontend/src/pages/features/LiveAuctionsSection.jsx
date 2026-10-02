@@ -176,7 +176,7 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
                 >
                   <Heart size={20} className={isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600 hover:text-red-500"} />
                 </button>
-                <img src={auction.images?.[0]?.url || auction.image} alt={auction.title} className={classes.auctionImage} />
+                <img src={auction.images?.[0]?.url || auction.image} alt={auction.title} className={classes.auctionImage} loading="lazy" />
                 <h3 className={classes.auctionTitle}>{auction.title}</h3>
                 <p className={classes.auctionPrice}>Current Bid: Rs.{auction.currentPrice}</p>
                 <p className={classes.auctionTime}>{getAuctionTimeLabel(auction)}</p>

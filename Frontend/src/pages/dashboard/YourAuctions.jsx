@@ -162,7 +162,7 @@ const YourAuctions = () => {
                     {ongoingAuctions.map((auction) => (
                       <div key={auction._id} className={styles.card}>
                         <div className={styles.imageContainer}>
-                          <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} />
+                          <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} / loading="lazy">
                         </div>
                         <div className={styles.content}>
                           <h3 className={styles.itemTitle}>{auction.title}</h3>
@@ -196,7 +196,7 @@ const YourAuctions = () => {
                       return (
                         <div key={auction._id} className={styles.card}>
                           <div className={styles.imageContainer}>
-                            <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} />
+                            <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} / loading="lazy">
                           </div>
                           <div className={`${styles.content} flex flex-col`}>
                             <h3 className={styles.itemTitle}>{auction.title}</h3>
@@ -243,7 +243,7 @@ const YourAuctions = () => {
                     {completedAuctions.map((auction) => (
                       <div key={auction._id} className={styles.card}>
                         <div className={styles.imageContainer}>
-                          <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} />
+                          <img src={auction.images?.[0]?.url || auction.image || 'https://via.placeholder.com/400x300'} alt={auction.title} className={styles.image} / loading="lazy">
                         </div>
                         <div className={styles.content}>
                           <h3 className={styles.itemTitle}>{auction.title}</h3>

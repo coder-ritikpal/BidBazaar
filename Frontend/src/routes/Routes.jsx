@@ -1,58 +1,55 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route } from 'react-router-dom';
 
-// Import your page components
-import Home from '@/pages/modules/Home';
-import Login from '@/pages/auth/Login';
-import Register from '@/pages/auth/Register';
-import ForgotPassword from '@/pages/auth/ForgotPassword'; // Import ForgotPassword
-import NotFound from '@/pages/modules/NotFound';
-import Help from '@/pages/modules/Help';
-import HowItWorks from '@/pages/containers/HowItWorks.jsx';
-import LiveAuctionsFullPage from '@/pages/features/LiveAuctionsFullPage.jsx'; // Import the renamed full page
-import BuyersProtectionFullPage from '@/pages/containers/BuyersProtectionFullPage.jsx';
-import TermsAndConditions from '@/pages/modules/TermsAndConditions.jsx';
-import StartSellingPage from '@/pages/features/StartSellingPage.jsx'; // Import the new StartSellingPage
-import Profile from '@/pages/dashboard/Profile';
-import Wishlist from '@/pages/dashboard/Wishlist';
-import ListedItems from '@/pages/dashboard/ListedItems';
-import MyOrders from '@/pages/dashboard/MyOrders';
-import YourAuctions from '@/pages/dashboard/YourAuctions';
-import AuctionDetailsPage from '@/pages/features/AuctionDetailsPage';
-import OrderDetailPage from '@/pages/dashboard/OrderDetailPage';
-import CategoriesCarousel from '@/pages/containers/CategoriesCarousel.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
+
+// Lazy load your page components
+const Home = lazy(() => import('@/pages/modules/Home'));
+const Login = lazy(() => import('@/pages/auth/Login'));
+const Register = lazy(() => import('@/pages/auth/Register'));
+const ForgotPassword = lazy(() => import('@/pages/auth/ForgotPassword'));
+const NotFound = lazy(() => import('@/pages/modules/NotFound'));
+const Help = lazy(() => import('@/pages/modules/Help'));
+const HowItWorks = lazy(() => import('@/pages/containers/HowItWorks.jsx'));
+const LiveAuctionsFullPage = lazy(() => import('@/pages/features/LiveAuctionsFullPage.jsx'));
+const BuyersProtectionFullPage = lazy(() => import('@/pages/containers/BuyersProtectionFullPage.jsx'));
+const TermsAndConditions = lazy(() => import('@/pages/modules/TermsAndConditions.jsx'));
+const StartSellingPage = lazy(() => import('@/pages/features/StartSellingPage.jsx'));
+const Profile = lazy(() => import('@/pages/dashboard/Profile'));
+const Wishlist = lazy(() => import('@/pages/dashboard/Wishlist'));
+const ListedItems = lazy(() => import('@/pages/dashboard/ListedItems'));
+const MyOrders = lazy(() => import('@/pages/dashboard/MyOrders'));
+const YourAuctions = lazy(() => import('@/pages/dashboard/YourAuctions'));
+const AuctionDetailsPage = lazy(() => import('@/pages/features/AuctionDetailsPage'));
+const OrderDetailPage = lazy(() => import('@/pages/dashboard/OrderDetailPage'));
+const CategoriesCarousel = lazy(() => import('@/pages/containers/CategoriesCarousel.jsx'));
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/help" element={<Help />} />
-      <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route path="/auctions" element={<LiveAuctionsFullPage />} /> {/* Route for the full auctions page */}
-      <Route path="/buyers-protection-page" element={<BuyersProtectionFullPage />} />
-      <Route path="/categories" element={<CategoriesCarousel />} />
-      <Route path="/start-selling" element={<StartSellingPage />} /> {/* Route for the Start Selling page */}
-      <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/wishlist" element={<Wishlist />} />
-      <Route path="/listed-items" element={<ListedItems />} />
-      <Route path="/orders" element={<MyOrders />} />
-      <Route path="/your-auctions" element={<YourAuctions />} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
-      <Route path="/listed-items" element={<ProtectedRoute><ListedItems /></ProtectedRoute>} />
-      <Route path="/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
-      <Route path="/your-auctions" element={<ProtectedRoute><YourAuctions /></ProtectedRoute>} />
-      <Route path="/start-selling" element={<ProtectedRoute><StartSellingPage /></ProtectedRoute>} />
-      <Route path="/order/:orderId" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
-      <Route path="/auction/:auctionId" element={<AuctionDetailsPage />} />
-      <Route path="/order/:orderId" element={<OrderDetailPage />} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-purple-600 font-medium">Loading...</div>}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/help" element={<Help />} />
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route path="/auctions" element={<LiveAuctionsFullPage />} />
+        <Route path="/buyers-protection-page" element={<BuyersProtectionFullPage />} />
+        <Route path="/categories" element={<CategoriesCarousel />} />
+        <Route path="/start-selling" element={<StartSellingPage />} />
+        <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+        <Route path="/listed-items" element={<ProtectedRoute><ListedItems /></ProtectedRoute>} />
+        <Route path="/orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
+        <Route path="/your-auctions" element={<ProtectedRoute><YourAuctions /></ProtectedRoute>} />
+        <Route path="/start-selling" element={<ProtectedRoute><StartSellingPage /></ProtectedRoute>} />
+        <Route path="/order/:orderId" element={<ProtectedRoute><OrderDetailPage /></ProtectedRoute>} />
+        <Route path="/auction/:auctionId" element={<AuctionDetailsPage />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 
