@@ -6,6 +6,7 @@ import { createOrderForAuction } from "../services/cart.service.js";
 import config from "../config/config.js";
 import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
 import jwt from "jsonwebtoken";
+import { getCache, setCache, clearCache } from "../cache/redis.js";
 
 const triggerAutoCreateOrder = async (auction) => {
   if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
@@ -235,6 +236,14 @@ export const createAuction = async (req, res) => {
 
 export const getAuctions = async (_req, res) => {
   try {
+    const cachedAuctions = await getCache('all_auctions');
+    if (cachedAuctions) {
+      return res.status(200).json({
+        message: "Auctions fetched successfully (cached)",
+        auctions: cachedAuctions,
+      });
+    }
+
     const now = new Date();
     
     // Only return auctions that are NOT cancelled, and 
@@ -251,10 +260,15 @@ export const getAuctions = async (_req, res) => {
       ]
     }).sort({ createdAt: -1 });
 
+    const processedAuctions = await Promise.all(auctions.map(toAuctionResponse));
+
+    // Cache the response for 15 seconds
+    await setCache('all_auctions', processedAuctions, 15);
+
     // Use Promise.all to ensure all toAuctionResponse calls (and potential saves) complete
     res.status(200).json({
       message: "Auctions fetched successfully",
-      auctions: await Promise.all(auctions.map(toAuctionResponse)),
+      auctions: processedAuctions,
     });
   } catch (error) {
     res.status(500).json({
