@@ -1,21 +1,21 @@
 export const getOrderDetailStyles = (theme) => {
     const isDark = theme === 'dark';
     return {
-      container: `min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
-      loadingContainer: `min-h-screen flex items-center justify-center ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
+      container: `min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
+      loadingContainer: `min-h-screen flex items-center justify-center ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
       card: `max-w-4xl mx-auto rounded-2xl shadow-xl overflow-hidden ${isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-100'}`,
       header: 'p-6 border-b flex flex-col sm:flex-row justify-between items-start gap-4',
-      title: `text-2xl font-bold ${isDark ? 'text-purple-400' : 'text-purple-700'}`,
+      title: `text-2xl font-bold ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
       orderId: `font-mono text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
       orderDate: `text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
       body: 'p-6 grid grid-cols-1 md:grid-cols-3 gap-8',
       itemSection: 'md:col-span-2',
-      itemCard: `flex flex-col sm:flex-row gap-6 items-center sm:items-start p-6 rounded-lg ${isDark ? 'bg-gray-800/50' : 'bg-gray-50'}`,
+      itemCard: `flex flex-col sm:flex-row gap-6 items-center sm:items-start p-6 rounded-lg ${isDark ? 'bg-[#0f0c29]/60 backdrop-blur-xl border border-purple-500/20 shadow-[0_8px_32px_rgba(168,85,247,0.15)] /50' : 'bg-gray-50'}`,
       image: 'w-32 h-32 object-cover rounded-lg shadow-md',
       itemDetails: 'flex-1 text-center sm:text-left',
       itemTitle: 'font-bold text-xl mb-2',
       priceLabel: `text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
-      price: `text-2xl font-bold ${isDark ? 'text-purple-300' : 'text-purple-600'}`,
+      price: `text-2xl font-bold ${isDark ? 'text-purple-300' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
       statusSection: 'md:col-span-1',
       statusTitle: `text-lg font-semibold mb-4 ${isDark ? 'text-gray-200' : 'text-gray-800'}`,
       timeline: 'space-y-6',
@@ -29,6 +29,6 @@ export const getOrderDetailStyles = (theme) => {
       confirmationTitle: `font-bold text-lg mb-2 ${isDark ? 'text-indigo-300' : 'text-indigo-800'}`,
       confirmationText: `mb-4 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`,
       confirmationButton: 'bg-green-600 hover:bg-green-700 text-white',
-      backLink: `inline-flex items-center gap-2 mt-8 font-semibold ${isDark ? 'text-purple-400 hover:text-purple-300' : 'text-purple-600 hover:text-purple-800'}`,
+      backLink: `inline-flex items-center gap-2 mt-8 font-semibold ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]  hover:text-purple-300' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)]  hover:text-purple-800'}`,
     };
   };

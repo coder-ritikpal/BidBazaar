@@ -2,7 +2,7 @@ export const getNotFoundClasses = (theme) => {
   const isDark = theme === 'dark';
 
   return {
-    container: `min-h-screen flex flex-col ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
+    container: `min-h-screen flex flex-col ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
     mainContent: "flex-grow flex flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8 text-center",
     headingWrapper: "mb-8 animate-fade-in-down",
     heading404: "text-8xl sm:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-600",

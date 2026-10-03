@@ -1,8 +1,8 @@
 export const getListedItemsStyles = (theme) => {
   const isDark = theme === 'dark';
   return {
-    loadingContainer: `min-h-screen flex items-center justify-center ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
-    container: `min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
+    loadingContainer: `min-h-screen flex items-center justify-center ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
+    container: `min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
     header: `flex items-center justify-between mb-8`,
     title: `text-3xl font-bold flex items-center gap-2`,
     itemCount: `text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
