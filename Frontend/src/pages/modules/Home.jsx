@@ -20,13 +20,13 @@ const Home = () => {
 
   return ( // Added responsive horizontal padding to the main container
     <div className="w-full">
-      <main className={`${backgroundClasses} pt-8 pb-0 px-4 sm:px-6 lg:px-8`}>
+      <main className={`min-h-screen w-full flex flex-col pb-0 ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
         <Heading 
           startSellingButtonClasses={startSellingButtonClasses}
           browseAuctionsButtonClasses={browseAuctionsButtonClasses}
         />
         {/* Categories Section - Integrated into Home page */}
-        <section className="mt-16 w-full">
+        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8">
           <h2 className={`text-5xl font-bold mb-8 text-center ${isDark ? 'text-purple-600' : 'text-purple-700'}`}>
             Featured Categories
           </h2>
@@ -35,10 +35,10 @@ const Home = () => {
             setSelectedCategory={setSelectedCategory}
           />
         </section>
-        <section className="mt-16 w-full">
+        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8">
           <LiveAuctionsSection selectedCategory={selectedCategory} /> {/* Render the LiveAuctionsSection component */}
         </section>
-        <section className="mt-16 w-full"> {/* Add margin-top to separate from hero */}
+        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8"> {/* Add margin-top to separate from hero */}
           <WhyBidBazaarSection />
         </section>
         
