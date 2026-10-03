@@ -52,6 +52,7 @@ const AuctionDetailsPage = () => {
   const [isBidding, setIsBidding] = useState(false);
   const [mainImage, setMainImage] = useState('');
   const [sellerDisplayName, setSellerDisplayName] = useState(null);
+  const [isFlashing, setIsFlashing] = useState(false); // New state for socket real-time flash
   // Use environment variable, fallback to production URL if in prod, otherwise localhost
   const SOCKET_URL = import.meta.env.VITE_API_URL_FEATURES || 
     (import.meta.env.PROD ? 'https://bidbazaar-auctions.onrender.com' : 'http://localhost:3002');
@@ -105,6 +106,9 @@ const AuctionDetailsPage = () => {
         // Update auction price and bid count
         setAuction(prevAuction => {
           if (prevAuction && data.currentPrice > prevAuction.currentPrice) {
+            // Trigger visual flash
+            setIsFlashing(true);
+            setTimeout(() => setIsFlashing(false), 1000);
             return { ...prevAuction, currentPrice: data.currentPrice, bids: [...(prevAuction.bids || []), data.bid._id] };
           }
           return prevAuction;
@@ -294,7 +298,9 @@ const AuctionDetailsPage = () => {
             <div className={classes.priceSection}>
               <div className="flex-1">
                 <p className={classes.priceLabel}>{auction.status === 'live' ? 'Current Bid' : 'Starting Price'}</p>
-                <p className={classes.priceValue}>Rs.{auction.currentPrice}</p>
+                <p className={`${classes.priceValue} ${isFlashing ? 'text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-110 transition-all duration-300' : 'transition-all duration-500'}`}>
+                  Rs.{auction.currentPrice}
+                </p>
               </div>
               <div className="text-right">
                 <p className={classes.priceLabel}>Bids</p>

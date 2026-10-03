@@ -26,7 +26,14 @@ const CategoriesCarousel = lazy(() => import('@/pages/containers/CategoriesCarou
 
 const AppRoutes = () => {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-purple-600 font-medium">Loading...</div>}>
+    <Suspense 
+      fallback={
+        <div className="flex flex-col justify-center items-center min-h-screen bg-[#050510]">
+          <div className="w-12 h-12 border-4 border-purple-500/30 border-t-cyan-400 rounded-full animate-spin shadow-[0_0_15px_rgba(34,211,238,0.5)] mb-4"></div>
+          <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 font-bold tracking-widest animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]">LOADING...</span>
+        </div>
+      }
+    >
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -37,7 +44,6 @@ const AppRoutes = () => {
         <Route path="/auctions" element={<LiveAuctionsFullPage />} />
         <Route path="/buyers-protection-page" element={<BuyersProtectionFullPage />} />
         <Route path="/categories" element={<CategoriesCarousel />} />
-        <Route path="/start-selling" element={<StartSellingPage />} />
         <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
