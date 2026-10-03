@@ -15,13 +15,13 @@ export const getBuyersProtectionSectionClasses = (theme) => {
     
     policyIntroWrapper: `md:w-1/2`,
     policyTitle: `text-center md:text-left mb-4 text-3xl font-semibold ${
-      isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
+      isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
     }`,
     policyParagraph: `mb-4 leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`,
     
     // Learn More link styled as a text link
     learnMoreLink: `inline-flex items-center font-semibold text-base transition-colors duration-200 ${
-      isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]  hover:text-purple-300' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)]  hover:text-purple-700'
+      isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]  hover:text-purple-300' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)]  hover:text-purple-700'
     }`,
   };
 };

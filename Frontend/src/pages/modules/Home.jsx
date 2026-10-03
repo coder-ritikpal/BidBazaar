@@ -1,33 +1,26 @@
 import React, { useState } from 'react';
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
-import { getHomePageClasses } from '@/styles/modules/homePageStyles.js'; // Import utility function for home page styles
 import CategoriesCarousel from '@/pages/containers/CategoriesCarousel'; // Import CategoriesCarousel component
 import Heading from '@/pages/containers/Heading'; // Correct path
 import Footer from '@/pages/modules/Footer'; // Import the new Footer component
 import WhyBidBazaarSection from '../containers/WhyBidBazaarSection.jsx';
 import LiveAuctionsSection from '../features/LiveAuctionsSection.jsx'; // Corrected import to LiveAuctionsSection
 
+import { getHomePageClasses } from '@/styles/modules/homePageStyles';
+
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const theme = useThemeStore((state) => state.theme); // Get theme from Zustand store
+  const theme = useThemeStore((state) => state.theme);
   const isDark = theme === 'dark';
+  const classes = getHomePageClasses(theme);
 
-  const {
-    startSellingButtonClasses,
-    browseAuctionsButtonClasses,
-    backgroundClasses,
-  } = getHomePageClasses(theme);
-
-  return ( // Added responsive horizontal padding to the main container
+  return (
     <div className="w-full">
-      <main className={`min-h-screen w-full flex flex-col pb-0 ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`}>
-        <Heading 
-          startSellingButtonClasses={startSellingButtonClasses}
-          browseAuctionsButtonClasses={browseAuctionsButtonClasses}
-        />
+      <main className={classes.mainContainer}>
+        <Heading />
         {/* Categories Section - Integrated into Home page */}
-        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8">
-          <h2 className={`text-5xl font-bold mb-8 text-center ${isDark ? 'text-purple-600' : 'text-purple-700'}`}>
+        <section className={classes.sectionContainer}>
+          <h2 className={classes.categoriesTitle}>
             Featured Categories
           </h2>
           <CategoriesCarousel
@@ -35,10 +28,10 @@ const Home = () => {
             setSelectedCategory={setSelectedCategory}
           />
         </section>
-        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8">
+        <section className={classes.sectionContainer}>
           <LiveAuctionsSection selectedCategory={selectedCategory} /> {/* Render the LiveAuctionsSection component */}
         </section>
-        <section className="mt-16 w-full px-4 sm:px-6 lg:px-8"> {/* Add margin-top to separate from hero */}
+        <section className={classes.sectionContainer}> {/* Add margin-top to separate from hero */}
           <WhyBidBazaarSection />
         </section>
         

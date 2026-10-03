@@ -5,7 +5,7 @@ export const getNotFoundClasses = (theme) => {
     container: `min-h-screen flex flex-col ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
     mainContent: "flex-grow flex flex-col items-center justify-center px-4 py-16 sm:px-6 lg:px-8 text-center",
     headingWrapper: "mb-8 animate-fade-in-down",
-    heading404: "text-8xl sm:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-600",
+    heading404: "text-8xl sm:text-9xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-purple-500 to-pink-600",
     subHeading: "mt-2 text-3xl font-bold tracking-tight sm:text-4xl",
     iconWrapper: "relative mb-10 group",
     iconGlow: `absolute inset-0 ${isDark ? 'bg-purple-900' : 'bg-purple-200'} blur-3xl opacity-40 rounded-full group-hover:opacity-60 transition-opacity duration-500`,

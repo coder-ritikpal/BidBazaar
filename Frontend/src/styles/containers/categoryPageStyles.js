@@ -7,8 +7,8 @@ export const getCategoryPageClasses = (theme) => {
     // Common classes for both CategoriesPage and CategoriesCarousel
     headingClasses: `font-bold mb-6 text-center ${isDark ? 'text-white' : 'text-gray-800'} text-xl sm:text-2xl md:text-3xl my-0`,
     // Specific heading variants used across components
-    pageHeadingClasses: `font-bold mb-6 text-center ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'text-purple-800'} text-2xl sm:text-3xl md:text-4xl my-0`,
-    carouselHeadingClasses: `font-bold mb-6 ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'text-purple-800'} text-xl sm:text-2xl md:text-3xl my-0`,
+    pageHeadingClasses: `font-bold mb-6 text-center ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'text-purple-800'} text-2xl sm:text-3xl md:text-4xl my-0`,
+    carouselHeadingClasses: `font-bold mb-6 ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'text-purple-800'} text-xl sm:text-2xl md:text-3xl my-0`,
 
     categoryImageClasses: `w-full h-24 flex items-center justify-center pb-4 [&>svg]:w-8 [&>svg]:h-8 [&>svg]:stroke-[1.5] ${isDark ? '[&>svg]:stroke-green-400' : '[&>svg]:stroke-green-700'}`,
     categoryCardClasses: `relative rounded-lg shadow-md overflow-hidden transform transition-transform duration-300 hover:scale-110 hover:shadow-xl ${

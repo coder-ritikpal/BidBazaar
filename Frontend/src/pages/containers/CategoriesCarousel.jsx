@@ -12,13 +12,10 @@ const CategoriesCarousel = ({ selectedCategory, setSelectedCategory }) => { // C
   ]; // Ab saari categories dikhengi scroll mein
 
   const {
-    // backgroundClasses is not used here as Home.jsx handles the overall background
-    carouselHeadingClasses, // Use specific heading classes for the carousel
     categoryCardClasses,
     categoryImageClasses,
     categoryNameClasses,
     carouselContainerClasses, // New
-    carouselHeaderClasses, // New
     carouselScrollContainerClasses, // New
     carouselItemLinkClasses, // New
     scrollbarHideClass, // New: moved from local constant

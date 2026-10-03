@@ -12,7 +12,7 @@ export const getProfileSidebarClasses = (theme, isProfileSidebarOpen) => {
   return {
     sidebarClasses: `${baseClasses} ${background} ${isProfileSidebarOpen ? openClass : closedClass}`,
     headerClasses: `flex items-center justify-between px-3.5 py-2.5 border-b shrink-0 ${isDark ? 'border-gray-800' : 'border-gray-100'}`,
-    avatarClasses: `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm bg-gradient-to-tr from-purple-600 to-indigo-500 shrink-0`,
+    avatarClasses: `w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-sm bg-linear-to-tr from-purple-600 to-indigo-500 shrink-0`,
     userNameClasses: `font-semibold text-xs leading-tight truncate text-gray-900 dark:text-white`,
     userEmailClasses: `text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[150px]`,
     closeButtonClasses: `p-1 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer`,

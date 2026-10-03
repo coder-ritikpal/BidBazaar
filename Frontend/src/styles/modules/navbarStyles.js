@@ -39,7 +39,7 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
     logoImageClasses: 'h-10 md:h-12 w-auto group-hover:scale-105 transition-transform duration-300',
 
     // Logo text (BidBazaar)
-    logoTextClasses: 'text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]',
+    logoTextClasses: 'text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)]',
 
     // Desktop search bar container
     desktopSearchBarContainerClasses: `flex-1 flex justify-center items-center ${hideOnAuthPage} ${hideDesktopOnMobileSearch}`,
@@ -69,7 +69,7 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
     themeToggleButtonClasses: 'text-xl md:text-2xl transition-transform hover:scale-110 hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]',
 
     // Join button (desktop)
-    joinButtonClasses: `hidden md:block py-2 px-6 rounded-full font-semibold text-white bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-105 transition-all duration-300 border-none`,
+    joinButtonClasses: `hidden md:block py-2 px-6 rounded-full font-semibold text-white bg-linear-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-105 transition-all duration-300 border-none`,
 
     // Login icon (mobile)
     loginIconClasses: 'md:hidden text-2xl hover:scale-110 transition-transform text-purple-400',
@@ -92,9 +92,9 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
     profileSidebarCloseButtonClasses: `self-end text-2xl p-2 hover:scale-110 transition-transform ${isDark ? 'text-gray-300 hover:text-purple-400' : 'text-gray-600 hover:text-purple-600'}`,
 
     // Profile icon for desktop (when logged in)
-    profileIconDesktopClasses: `hidden md:flex items-center justify-center w-10 h-10 rounded-full text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:scale-110 transition-all duration-300 cursor-pointer`,
+    profileIconDesktopClasses: `hidden md:flex items-center justify-center w-10 h-10 rounded-full text-white bg-linear-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] hover:scale-110 transition-all duration-300 cursor-pointer`,
     
     // Profile icon for mobile (when logged in)
-    profileIconMobileClasses: `md:hidden flex items-center justify-center w-10 h-10 rounded-full text-white bg-gradient-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:scale-110 transition-all duration-300 cursor-pointer`,
+    profileIconMobileClasses: `md:hidden flex items-center justify-center w-10 h-10 rounded-full text-white bg-linear-to-r from-blue-500 to-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)] hover:scale-110 transition-all duration-300 cursor-pointer`,
   };
 };

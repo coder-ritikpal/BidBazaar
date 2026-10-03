@@ -19,7 +19,7 @@ export const getAuctionDetailsPageClasses = (theme) => {
 
     // Details Section (Right)
     detailsSection: 'lg:col-span-2 flex flex-col',
-    categoryLabel: `inline-block mb-2 text-sm font-semibold tracking-wider uppercase rounded-full w-fit ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
+    categoryLabel: `inline-block mb-2 text-sm font-semibold tracking-wider uppercase rounded-full w-fit ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
     title: `text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`,
     
     statusTimeWrapper: 'flex items-center gap-4 mb-6',
@@ -31,7 +31,7 @@ export const getAuctionDetailsPageClasses = (theme) => {
 
     // Countdown Timer
     countdownContainer: `text-center p-4 rounded-lg my-6 ${isDark ? 'bg-[#0f0c29]/60 backdrop-blur-xl border border-purple-500/20 shadow-[0_8px_32px_rgba(168,85,247,0.15)] ' : 'bg-gray-50'} border ${isDark ? 'border-gray-700' : 'border-gray-200'}`,
-    countdownEndsLabel: `text-sm font-medium uppercase tracking-wider mb-3 ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
+    countdownEndsLabel: `text-sm font-medium uppercase tracking-wider mb-3 ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
     countdownSegmentsWrapper: 'flex justify-center gap-2 sm:gap-4',
     countdownSegment: 'flex flex-col items-center w-16',
     countdownValue: `text-2xl sm:text-3xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`,
@@ -39,7 +39,7 @@ export const getAuctionDetailsPageClasses = (theme) => {
 
     priceSection: `flex justify-between items-center p-4 rounded-lg mb-6 ${isDark ? 'bg-[#0f0c29]/60 backdrop-blur-xl border border-purple-500/20 shadow-[0_8px_32px_rgba(168,85,247,0.15)] ' : 'bg-gray-50'} border ${isDark ? 'border-gray-700' : 'border-gray-200'}`,
     priceLabel: `text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
-    priceValue: `text-2xl font-bold ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
+    priceValue: `text-2xl font-bold ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
 
     bidForm: 'flex flex-col sm:flex-row gap-3 mb-6',
     bidInputWrapper: 'relative flex-grow',
@@ -53,7 +53,7 @@ export const getAuctionDetailsPageClasses = (theme) => {
     winnerMessage: `p-6 rounded-lg text-center mb-6 shadow-lg border ${isDark ? 'bg-green-900/50 border-green-700' : 'bg-green-100 border-green-200'}`,
     winnerTitle: `text-2xl font-bold ${isDark ? 'text-green-300' : 'text-green-800'}`,
     winnerText: `mt-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`,
-    winnerLink: `mt-4 inline-block font-semibold rounded-lg px-4 py-2 transition-colors ${isDark ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'}`,
+    winnerLink: `mt-4 inline-block font-semibold rounded-lg px-4 py-2 transition-colors ${isDark ? 'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-linear-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'}`,
 
     descriptionSection: `mt-4 pt-6 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`,
     sectionTitle: `text-lg font-semibold mb-3 ${isDark ? 'text-white' : 'text-gray-800'}`,
@@ -77,7 +77,7 @@ export const getAuctionDetailsPageClasses = (theme) => {
     bidTime: `text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
     bidAmount: `font-bold text-lg ${isDark ? 'text-green-400' : 'text-green-600'}`,
     bidHistoryMessage: `text-center text-sm p-4 rounded-lg ${isDark ? 'text-gray-400 bg-gray-800' : 'text-gray-500 bg-gray-100'}`,
-    viewAllBidsButton: `mt-4 w-full py-2 rounded-lg font-semibold transition-colors ${isDark ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'}`,
+    viewAllBidsButton: `mt-4 w-full py-2 rounded-lg font-semibold transition-colors ${isDark ? 'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-linear-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'}`,
 
     sellerInfoSection: `mt-6 pt-6 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`,
 

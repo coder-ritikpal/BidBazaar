@@ -14,7 +14,7 @@ export const getAuthPageClasses = (theme) => {
     } max-h-full overflow-y-auto`,
 
     // Heading (Login/Register)
-    headingClasses: `text-3xl font-extrabold text-center mb-6 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]`,
+    headingClasses: `text-3xl font-extrabold text-center mb-6 bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]`,
 
     // Label text
     labelTextClasses: `text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`,
@@ -29,8 +29,8 @@ export const getAuthPageClasses = (theme) => {
     // Primary buttons (Login/Register)
     buttonClasses: `w-full py-3 px-4 rounded-xl font-bold transition-all duration-300 border-none shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] hover:scale-[1.02] ${
       isDark
-        ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white'
-        : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white'
+        ? 'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 text-white'
+        : 'bg-linear-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 text-white'
     }`,
 
     // Google button
@@ -75,6 +75,6 @@ export const getAuthPageClasses = (theme) => {
     checkboxContainerClasses: 'flex items-center space-x-3',
 
     // App name heading for auth pages
-    appNameHeadingClasses: `text-4xl md:text-5xl font-extrabold text-center mb-6 mt-8 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]`,
+    appNameHeadingClasses: `text-4xl md:text-5xl font-extrabold text-center mb-6 mt-8 bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-blue-400 drop-shadow-[0_0_15px_rgba(168,85,247,0.3)]`,
   };
 };

@@ -15,7 +15,7 @@ export const getLiveAuctionsFullPageClasses = (theme) => { // Renamed function
     } text-center`,
     heroContent: `max-w-4xl mx-auto`,
     heroTitle: `text-4xl md:text-6xl font-extrabold mb-4 ${
-      isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-500 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] ' // Purple heading for both themes
+      isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-blue-500 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] ' // Purple heading for both themes
     }`,
     heroSubtitle: `text-lg md:text-xl mb-8 ${
       isDark ? 'text-gray-400' : 'text-gray-600' // Standard subtitle color
@@ -26,7 +26,7 @@ export const getLiveAuctionsFullPageClasses = (theme) => { // Renamed function
 
     // State Messages
     loadingState: `text-center text-xl font-semibold ${
-      isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
+      isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
     } my-10`,
     errorState: `text-center text-xl font-semibold text-red-500 my-10`,
     infoMessage: `text-center text-base md:text-lg font-medium ${
@@ -54,13 +54,13 @@ export const getLiveAuctionsFullPageClasses = (theme) => { // Renamed function
       isDark ? 'text-gray-400' : 'text-gray-500'
     }`,
     currentBidValue: `font-bold text-lg ${
-      isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
+      isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-600 to-blue-700 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '
     }`,
     auctionTimeRemaining: `text-sm font-medium text-center mt-2 ${
       isDark ? 'text-amber-400' : 'text-amber-600'
     }`,
     viewDetailsButton: `w-full mt-4 py-2 rounded-lg font-semibold transition-colors ${
-      isDark ? 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'
+      isDark ? 'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none' : 'bg-linear-to-r from-purple-500 to-blue-500 hover:from-purple-400 hover:to-blue-400 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none'
     }`,
   };
 };

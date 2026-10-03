@@ -3,7 +3,7 @@ export const getFooterClasses = (theme) => {
 
   return {
     footerContainer: `w-full py-8 px-4 sm:px-6 lg:px-8 mt-0 ${
-      isDark ? 'bg-gradient-to-r from-slate-950 to-purple-900 text-green border-t border-purple-800' : 'bg-gradient-to-r from-gray-100 to-purple-200 text-gray-700 border-t border-gray-300'
+      isDark ? 'bg-linear-to-r from-slate-950 to-purple-900 text-green border-t border-purple-800' : 'bg-linear-to-r from-gray-100 to-purple-200 text-gray-700 border-t border-gray-300'
     } transition-colors duration-300`,
     contentWrapper: 'max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8',
     sectionHeading: `text-lg font-semibold mb-4 ${

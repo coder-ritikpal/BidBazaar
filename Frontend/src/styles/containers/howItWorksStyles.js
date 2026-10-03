@@ -5,7 +5,7 @@ export const getHowItWorksClasses = (theme) => {
     container: `min-h-screen flex flex-col ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'} transition-colors duration-300`,
     mainContent: 'flex-grow container mx-auto px-4 py-12',
     headerSection: 'text-center mb-16',
-    title: `text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
+    title: `text-4xl md:text-5xl font-bold mb-6 ${isDark ? 'bg-clip-text text-transparent bg-linear-to-r from-purple-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(168,85,247,0.4)] ' : 'bg-clip-text text-transparent bg-linear-to-r from-purple-500 to-blue-600 drop-shadow-[0_0_10px_rgba(168,85,247,0.2)] '}`,
     subtitle: `text-lg md:text-xl ${isDark ? 'text-gray-300' : 'text-gray-600'} max-w-2xl mx-auto leading-relaxed`,
     stepsContainer: 'grid grid-cols-1 md:grid-cols-3 gap-8 mb-16',
     stepCard: `p-8 rounded-2xl shadow-lg text-center transform hover:-translate-y-2 transition-all duration-300 ${isDark ? 'bg-[#0f0c29]/60 backdrop-blur-xl border border-purple-500/20 shadow-[0_8px_32px_rgba(168,85,247,0.15)]  border border-gray-700 hover:shadow-purple-900/20' : 'bg-white border border-gray-100 hover:shadow-xl'}`,
@@ -20,6 +20,6 @@ export const getHowItWorksClasses = (theme) => {
     whyCardTitle: 'text-xl font-bold mb-2',
     whyCardDesc: `text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`,
     ctaSection: 'text-center mt-8',
-    ctaButton: `inline-flex items-center px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 ${isDark ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/50' : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none shadow-lg shadow-purple-200'}`,
+    ctaButton: `inline-flex items-center px-8 py-4 rounded-full font-bold text-lg transition-all transform hover:scale-105 ${isDark ? 'bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-900/50' : 'bg-linear-to-r from-blue-500 to-purple-600 hover:from-blue-400 hover:to-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] hover:shadow-[0_0_25px_rgba(168,85,247,0.6)] text-white hover:scale-[1.02] border-none shadow-lg shadow-purple-200'}`,
   };
 };
