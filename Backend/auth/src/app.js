@@ -17,7 +17,7 @@ const isTest =
 
 app.use(
   cors({
-    origin: "http://localhost:5173", // Reverted to HTTP
+    origin: [config.FRONTEND_URL, "http://localhost:5173"], // Allow both env variable and local dev
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"], // Explicitly allow Authorization header
   }),

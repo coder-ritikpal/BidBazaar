@@ -17,7 +17,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: [config.FRONTEND_URL, "http://localhost:5173"], // Allow both env variable and local dev
     credentials: true,
   }),
 );  
