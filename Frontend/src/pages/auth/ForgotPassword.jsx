@@ -55,12 +55,9 @@ const ForgotPassword = () => {
 
     setIsLoading(true);
     try {
-      // This would typically send a request to your backend to send a password reset email
-      // For now, it's a placeholder.
-      // const response = await axios.post(`${API_BASE_URL}/api/auth/forgot-password`, { email });
-      // console.log(response.data);
-      toast.success('If an account with that email exists, a password reset link has been sent.');
-      setSuccessMessage('If an account with that email exists, a password reset link has been sent to your email address.');
+      // Feature not implemented yet
+      setGeneralError('Password reset is currently unavailable. Please contact support.');
+      toast.error('Password reset is currently unavailable.');
     } catch (error) {
       console.error('Forgot password error:', error);
       setGeneralError('Failed to send password reset email. Please try again.');
