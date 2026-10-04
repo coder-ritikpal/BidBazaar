@@ -19,4 +19,9 @@ const _config = {
   RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
 };
 
+if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+  console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
+  process.exit(1);
+}
+
 export default Object.freeze(_config);

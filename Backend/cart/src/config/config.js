@@ -12,4 +12,9 @@ const _config = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
 };
 
+if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+  console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
+  process.exit(1);
+}
+
 export default Object.freeze(_config);

@@ -17,7 +17,12 @@ const _config = {
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
   SESSION_SECRET: process.env.SESSION_SECRET || 'default_session_secret',
   DASHBOARD_SERVICE_URL: process.env.DASHBOARD_SERVICE_URL || "http://localhost:3004",
-  INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || "fallback_internal_secret",
+  INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET,
 };
+
+if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+  console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
+  process.exit(1);
+}
 
 export default _config;

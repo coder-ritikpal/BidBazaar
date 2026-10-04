@@ -17,8 +17,13 @@ const _config = {
   REVIEW_WINDOW_MINUTES: process.env.REVIEW_WINDOW_MINUTES || 30,
   MIN_AUCTION_DURATION_MINUTES: process.env.MIN_AUCTION_DURATION_MINUTES || 10,
   AUCTIONS_SERVICE_URL: process.env.AUCTIONS_SERVICE_URL || "http://localhost:3002",
-  INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET || "fallback_internal_secret",
+  INTERNAL_AUTH_TOKEN_SECRET: process.env.INTERNAL_AUTH_TOKEN_SECRET,
   RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost",
 };
+
+if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+  console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
+  process.exit(1);
+}
 
 export default Object.freeze(_config);
