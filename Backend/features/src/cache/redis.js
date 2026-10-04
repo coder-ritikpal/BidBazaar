@@ -42,6 +42,20 @@ export const setCache = async (key, value, expirationInSeconds = 30) => {
   }
 };
 
+export const setNxCache = async (key, value, expirationInSeconds = 60) => {
+  if (!redisClient) return false;
+  try {
+    const result = await redisClient.set(key, JSON.stringify(value), {
+      NX: true,
+      EX: expirationInSeconds
+    });
+    return result === 'OK';
+  } catch (err) {
+    console.error('[Features Service] Redis SETNX Error:', err.message);
+    return false;
+  }
+};
+
 export const clearCache = async (key) => {
   if (!redisClient) return;
   try {

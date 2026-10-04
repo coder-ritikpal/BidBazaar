@@ -6,7 +6,7 @@ import { createOrderForAuction } from "../services/cart.service.js";
 import config from "../config/config.js";
 import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
 import jwt from "jsonwebtoken";
-import { getCache, setCache, clearCache } from "../cache/redis.js";
+import { getCache, setCache, clearCache, setNxCache } from "../cache/redis.js";
 
 const triggerAutoCreateOrder = (auction, retries = 5, initialDelay = 2000) => {
   if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
@@ -362,24 +362,39 @@ export const auctionBid = async (req, res) => {
       return res.status(400).json({ message: "Bid amount must be in multiples of 10." });
     }
 
-    // Rate limiting: allow only one bid per minute per user
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    const recentBid = await bidModel.findOne({ 
-      bidderId, 
-      createdAt: { $gte: oneMinuteAgo } 
-    });
+    // Rate limiting: allow only one bid per minute per user, atomically
+    const rateLimitKey = `rate_limit:bid:${bidderId}`;
+    const lockAcquired = await setNxCache(rateLimitKey, true, 60);
 
-    if (recentBid) {
-      const waitSeconds = Math.ceil((recentBid.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
-      return res.status(429).json({ 
-        message: `You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.` 
+    if (!lockAcquired) {
+      // Fallback to checking DB if Redis isn't active/working or if genuinely limited
+      const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
+      const recentBid = await bidModel.findOne({ 
+        bidderId, 
+        createdAt: { $gte: oneMinuteAgo } 
       });
+
+      if (recentBid) {
+        const waitSeconds = Math.ceil((recentBid.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
+        return res.status(429).json({ 
+          message: `You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.` 
+        });
+      }
     }
 
     // Pre-generate the bid ID
     const bidId = new mongoose.Types.ObjectId();
 
-    // Atomically update the auction ONLY IF currentPrice is still less than amount
+    // 1. Create the bid document first to guarantee persistence before altering auction price
+    const newBid = new bidModel({
+      _id: bidId,
+      auctionId,
+      bidderId,
+      amount,
+    });
+    await newBid.save(); // Wait for bid to be written
+
+    // 2. Atomically update the auction ONLY IF currentPrice is still less than amount
     const updatedAuction = await auctionModel.findOneAndUpdate(
       { 
         _id: auctionId, 
@@ -393,19 +408,13 @@ export const auctionBid = async (req, res) => {
     );
 
     if (!updatedAuction) {
-      // Update failed due to race condition (price increased)
+      // 3. Update failed due to race condition (price increased), rollback the bid
+      await bidModel.findByIdAndDelete(bidId);
       const currentAuction = await auctionModel.findById(auctionId);
       return res.status(400).json({ 
         message: `Bid rejected. The current price has increased to Rs.${currentAuction?.currentPrice || auction.currentPrice}.` 
       });
     }
-
-    const newBid = await bidModel.create({
-      _id: bidId,
-      auctionId,
-      bidderId,
-      amount,
-    });
 
     // Emit a real-time event to all clients in the auction room
     const io = req.app.get('io');
