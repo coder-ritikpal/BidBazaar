@@ -2,6 +2,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import productRoutes from "./routes/product.routes.js";
+import config from "./config/config.js";
 
 let requestLogger = (_req, _res, next) => next();
 
