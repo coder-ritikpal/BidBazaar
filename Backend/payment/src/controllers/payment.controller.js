@@ -2,6 +2,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import config from '../config/config.js'; // Assuming config file for secrets
 import jwt from 'jsonwebtoken';
+import Payment from '../models/payment.model.js';
 
 const razorpayInstance = new Razorpay({
   key_id: config.RAZORPAY_KEY_ID,
@@ -78,6 +79,18 @@ export const createOrder = async (req, res) => {
     };
 
     const razorpayOrder = await razorpayInstance.orders.create(options);
+
+    await Payment.findOneAndUpdate(
+      { orderId },
+      { 
+        userId,
+        razorpayOrderId: razorpayOrder.id,
+        amount: options.amount,
+        status: 'created'
+      },
+      { upsert: true, new: true }
+    );
+
     res.status(200).json(razorpayOrder);
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
@@ -100,7 +113,7 @@ export const verifyPayment = async (req, res) => {
     .digest("hex");
 
   if (expectedSignature === razorpay_signature) {
-    // Signature is valid. Update order status in cart service.
+    // Signature is valid. Verify payment mapping and update order status in cart service.
     try {
       if (!internal_order_id) {
         throw new Error("Internal order ID is missing from payment verification.");
@@ -108,10 +121,31 @@ export const verifyPayment = async (req, res) => {
       if (!userId) {
         throw new Error("User ID is missing. Cannot update order status.");
       }
+
+      const payment = await Payment.findOne({
+        orderId: internal_order_id,
+        razorpayOrderId: razorpay_order_id,
+        userId: userId
+      });
+
+      if (!payment) {
+        return res.status(400).json({ message: "Payment validation failed: Order mismatch or tampered request." });
+      }
+
+      if (payment.status === 'captured') {
+        return res.status(200).json({ message: "Payment already verified and captured." });
+      }
+
       if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
         console.error("Cart service URL or internal auth secret is not configured for payment service.");
         throw new Error("Internal server configuration error.");
       }
+
+      // Update payment record locally before calling cart service
+      payment.status = 'captured';
+      payment.razorpayPaymentId = razorpay_payment_id;
+      payment.razorpaySignature = razorpay_signature;
+      await payment.save();
 
       // Create an internal token to authenticate with the cart service
       const internalToken = jwt.sign({ id: userId, service: 'payment-service' }, config.INTERNAL_AUTH_TOKEN_SECRET, { expiresIn: '5m' });
@@ -178,8 +212,28 @@ export const razorpayWebhook = async (req, res) => {
 
       const internalOrderId = entity.notes?.orderId;
       const userId = entity.notes?.userId;
+      const razorpayOrderId = entity.order_id || entity.id;
 
       if (internalOrderId && userId) {
+        // Verify against local payment intent
+        const payment = await Payment.findOne({
+          orderId: internalOrderId,
+          razorpayOrderId: razorpayOrderId
+        });
+
+        if (!payment) {
+          console.warn(`[Webhook] No matching payment intent for order ${internalOrderId} and razorpay order ${razorpayOrderId}.`);
+          return res.status(400).send('Invalid payment mapping.');
+        }
+
+        if (payment.status !== 'captured') {
+          payment.status = 'captured';
+          if (event === 'payment.captured') {
+            payment.razorpayPaymentId = entity.id;
+          }
+          await payment.save();
+        }
+
         // Authenticate as a service to the cart service
         const internalToken = jwt.sign(
           { id: userId, service: 'payment-service-webhook' },
