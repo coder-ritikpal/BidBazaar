@@ -37,15 +37,16 @@ const Login = () => {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
 
-    if (error === 'google_auth_failed') {
-      toast.error('Google authentication failed. Please try again.');
-      // Clean up the URL to remove the error parameter
+    if (error) {
       const newUrl = new URL(window.location.href);
       newUrl.searchParams.delete('error');
-      window.history.replaceState({}, document.title, newUrl.toString());
-    } else if (error) {
-      // Handle other potential errors if needed
-      toast.error(`Authentication failed: ${error}`);
+
+      if (error === 'google_auth_failed') {
+        toast.error('Google authentication failed. Please try again.');
+      } else {
+        // Handle other potential errors if needed
+        toast.error(`Authentication failed: ${error}`);
+      }
       window.history.replaceState({}, document.title, newUrl.toString());
     }
   }, []); // Run only once on component mount
