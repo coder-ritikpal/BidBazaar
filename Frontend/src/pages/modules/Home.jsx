@@ -3,8 +3,8 @@ import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from
 import CategoriesCarousel from '@/pages/containers/CategoriesCarousel'; // Import CategoriesCarousel component
 import Heading from '@/pages/containers/Heading'; // Correct path
 import Footer from '@/pages/modules/Footer'; // Import the new Footer component
-import WhyBidBazaarSection from '../containers/WhyBidBazaarSection.jsx';
-import LiveAuctionsSection from '../features/LiveAuctionsSection.jsx'; // Corrected import to LiveAuctionsSection
+import WhyBidBazaarSection from '@/pages/containers/WhyBidBazaarSection';
+import LiveAuctionsSection from '@/pages/features/LiveAuctionsSection'; // Corrected import to LiveAuctionsSection
 
 import { getHomePageClasses } from '@/styles/modules/homePageStyles';
 
