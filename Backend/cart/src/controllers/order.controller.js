@@ -143,6 +143,9 @@ export const createOrder = async (req, res) => {
     // Idempotency check: if an order for this auction already exists, return it.
     const existingOrder = await orderModel.findOne({ auctionId });
     if (existingOrder) {
+      if (String(existingOrder.winnerId) !== userId) {
+        return res.status(403).json({ message: "You are not authorized to access this order." });
+      }
       return res.status(200).json({ message: "Item is already in your cart or ordered.", order: existingOrder });
     }
 
