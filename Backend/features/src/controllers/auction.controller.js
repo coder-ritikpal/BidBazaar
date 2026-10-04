@@ -8,32 +8,47 @@ import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
 import jwt from "jsonwebtoken";
 import { getCache, setCache, clearCache } from "../cache/redis.js";
 
-const triggerAutoCreateOrder = async (auction) => {
+const triggerAutoCreateOrder = (auction, retries = 5, initialDelay = 2000) => {
   if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
     console.error("Missing config for internal cart service call.");
     return;
   }
   
-  try {
-    const internalToken = jwt.sign(
-      { service: 'features-service' },
-      config.INTERNAL_AUTH_TOKEN_SECRET,
-      { expiresIn: '5m' }
-    );
-    const url = new URL('/api/orders/internal/auto-create', config.CART_SERVICE_URL);
-    
-    // Fire and forget
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${internalToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ auctionId: auction._id })
-    }).catch(err => console.error("Failed to trigger auto-create order:", err));
-  } catch (error) {
-    console.error("Failed to sign internal token for auto-create order:", error);
-  }
+  const url = new URL('/api/orders/internal/auto-create', config.CART_SERVICE_URL);
+  
+  const attempt = async (currentRetry, delay) => {
+    try {
+      const internalToken = jwt.sign(
+        { service: 'features-service' },
+        config.INTERNAL_AUTH_TOKEN_SECRET,
+        { expiresIn: '5m' }
+      );
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${internalToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ auctionId: auction._id })
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+      console.log(`Order auto-created successfully for auction ${auction._id}`);
+    } catch (err) {
+      if (currentRetry > 0) {
+        console.warn(`Failed to auto-create order for auction ${auction._id}. Retrying in ${delay}ms... (${currentRetry} retries left). Error: ${err.message}`);
+        setTimeout(() => attempt(currentRetry - 1, delay * 2), delay);
+      } else {
+        console.error(`CRITICAL: Exhausted all retries for auto-creating order for auction ${auction._id}. Error:`, err);
+      }
+    }
+  };
+
+  attempt(retries, initialDelay);
 };
  
 const MIN_AUCTION_DURATION_MS = (config.MIN_AUCTION_DURATION_MINUTES || 5) * 60 * 1000;
@@ -79,7 +94,7 @@ export const getAuctionStatus = (auction, now = Date.now()) => { // Exported for
   return "upcoming";
 };
 
-export const toAuctionResponse = async (auction) => { // Made async to allow await for save()
+export const processAuctionTransitions = async (auction) => {
   const endAuctionAtTime = getAuctionEndTime(auction).getTime();
   const currentStatus = getAuctionStatus(auction);
   let shouldSave = false;
@@ -97,18 +112,15 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
   }
 
   if (currentStatus === "ended" && !auction.cancelledAt) {
-    // Ensure deleteAt is always set for ended auctions (including manual end).
     if (!auction.deleteAt) {
       auction.deleteAt = new Date(endAuctionAtTime + 48 * 60 * 60 * 1000); // Hide after 48 hours
       shouldSave = true;
     }
 
-    // If the auction has ended and a winner hasn't been assigned yet, determine winner atomically.
     if (!auction.winnerId) {
       const winningBid = await bidModel.findOne({ auctionId: auction._id }).sort({ createdAt: -1 });
 
       if (winningBid) {
-        // Atomically update the winner to prevent concurrent cron workers from creating duplicate orders
         const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
           { _id: auction._id, winnerId: { $exists: false } },
           { 
@@ -121,13 +133,11 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
         );
 
         if (atomicallyUpdatedAuction) {
-          // We successfully won the race to assign the winner
           auction.winnerId = atomicallyUpdatedAuction.winnerId;
           auction.winningBidId = atomicallyUpdatedAuction.winningBidId;
           
           triggerAutoCreateOrder(atomicallyUpdatedAuction);
           
-          // Publish auction_won event
           import('../broker/rabbit.js').then(({ publishToQueue }) => {
             publishToQueue('auction_won', {
               auctionId: atomicallyUpdatedAuction._id.toString(),
@@ -156,6 +166,13 @@ export const toAuctionResponse = async (auction) => { // Made async to allow awa
   if (shouldSave) {
     await auction.save();
   }
+
+  return auction;
+};
+
+export const toAuctionResponse = async (auction) => {
+  const endAuctionAtTime = getAuctionEndTime(auction).getTime();
+  const currentStatus = getAuctionStatus(auction);
 
   return {
     ...auction.toObject(),
@@ -461,24 +478,12 @@ export const endAuction = async (req, res) => {
       return res.status(400).json({ message: `Auction has already ${auctionStatus}.` });
     }
 
-    // Determine winner at end time (latest bid is the highest due to bid rules).
-    const winningBid = await bidModel.findOne({ auctionId }).sort({ createdAt: -1 });
-    let newlyAssignedWinner = false;
-    
-    if (winningBid) {
-      auction.winnerId = winningBid.bidderId;
-      auction.winningBidId = winningBid._id;
-      newlyAssignedWinner = true;
-    }
-
     // Manually end the auction by setting its end time to now
     auction.endAuctionAt = new Date();
-    
     await auction.save();
 
-    if (newlyAssignedWinner) {
-      triggerAutoCreateOrder(auction);
-    }
+    // Immediately process state transitions (winner assignment, event publishing, order creation)
+    await processAuctionTransitions(auction);
 
     const responseAuction = await toAuctionResponse(auction);
     res.status(200).json({ message: "Auction ended successfully and winner declared.", auction: responseAuction });

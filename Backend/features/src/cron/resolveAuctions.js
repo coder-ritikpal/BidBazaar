@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import auctionModel from '../models/auction.model.js';
-import { getAuctionStatus, toAuctionResponse } from '../controllers/auction.controller.js';
+import { getAuctionStatus, processAuctionTransitions } from '../controllers/auction.controller.js';
 
 const startResolveAuctionsCron = () => {
   // Run every 5 minutes
@@ -17,11 +17,12 @@ const startResolveAuctionsCron = () => {
       let resolvedCount = 0;
 
       for (const auction of activeAuctions) {
+        // processAuctionTransitions determines if the auction is live or ended,
+        // publishes relevant events, assigns winners, and sets deleteAt.
+        await processAuctionTransitions(auction);
+        
         const currentStatus = getAuctionStatus(auction);
         if (currentStatus === 'ended') {
-          // toAuctionResponse automatically determines the winner, saves deleteAt, 
-          // and triggers order auto-creation in the cart service.
-          await toAuctionResponse(auction);
           resolvedCount++;
         }
       }
