@@ -25,6 +25,7 @@ import {
   loginUserBFF,
   googleAuthBFF,
   googleAuthCallbackBFF,
+  exchangeGoogleCodeBFF,
   logoutUserBFF,
   getProductByIdBFF, // Import the new controller function
   createProductBFF,
@@ -34,6 +35,7 @@ import {
 } from "../controllers/dashboard.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import upload from "../middlewares/upload.middleware.js"; // Import the upload middleware
+import { validateImageUploads } from "../middlewares/validateImageUploads.middleware.js";
 
 const router = express.Router();
 
@@ -62,21 +64,31 @@ router.post("/products", authMiddleware, (req, res, next) => {
   upload.array("images", 2)(req, res, (err) => {
     if (err) {
       console.error("[Dashboard BFF] Multer error for /products:", err.message);
-      return res.status(400).json({ message: err.message });
+      const statusCode = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      return res.status(statusCode).json({
+        message: err.code === "LIMIT_FILE_SIZE"
+          ? "Uploaded image exceeds the 5 MB limit."
+          : "Invalid image upload.",
+      });
     }
     next();
   });
-}, createProductBFF);
+}, validateImageUploads, createProductBFF);
 
 router.put("/products/:productId", authMiddleware, (req, res, next) => {
   upload.array("images", 2)(req, res, (err) => {
     if (err) {
       console.error("[Dashboard BFF] Multer error for /products/:productId:", err.message);
-      return res.status(400).json({ message: err.message });
+      const statusCode = err.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+      return res.status(statusCode).json({
+        message: err.code === "LIMIT_FILE_SIZE"
+          ? "Uploaded image exceeds the 5 MB limit."
+          : "Invalid image upload.",
+      });
     }
     next();
   });
-}, updateProductBFF);
+}, validateImageUploads, updateProductBFF);
 
 router.delete("/products/:productId", authMiddleware, deleteProductBFF);
 
@@ -89,6 +101,7 @@ router.post("/auth/logout", logoutUserBFF);
 
 router.get("/auth/google", googleAuthBFF);
 router.get("/auth/google/callback", googleAuthCallbackBFF); // No authMiddleware, this is the callback
+router.post("/auth/google/exchange", exchangeGoogleCodeBFF);
 router.get("/users/:userId/public", getUserPublicProfileBFF); // Public user profile
 
 // Health check route
