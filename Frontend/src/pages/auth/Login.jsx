@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
 
 import { toast } from 'react-toastify'; // Import toast
@@ -133,8 +133,6 @@ const Login = () => {
     backgroundClasses,
     errorMessageClasses, // Added errorMessageClasses
   } = getAuthPageClasses(theme);
-  const { appNameHeadingClasses } = getAuthPageClasses(theme); // Reusing logoTextClasses for app name heading
-
   const handleGoogleLogin = () => { // This will now redirect to dashboard BFF
     if (location.state?.from) {
       sessionStorage.setItem('redirect_after_login', location.state.from);
@@ -189,9 +187,7 @@ const Login = () => {
             {passwordError && <p className={errorMessageClasses}>{passwordError}</p>}
           </div>
           <div className="text-right">
-            <Link to="/forgot-password" className={linkClasses}>
-              Forgot Password?
-            </Link>
+            {/* Forgot Password link removed since it's unfinished */}
           </div>
           {generalError && <p className={errorMessageClasses}>{generalError}</p>}
           <Button type="submit" className={buttonClasses} disabled={isLoading}>

@@ -115,7 +115,10 @@ const ListedItems = () => {
               </Button>
             </Link>
             <button
-              onClick={() => { activeTab === 'listed' ? fetchListedItems() : fetchSoldItems(); }}
+              onClick={() => {
+                if (activeTab === 'listed') fetchListedItems();
+                else fetchSoldItems();
+              }}
               className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
               title="Refresh"
             >

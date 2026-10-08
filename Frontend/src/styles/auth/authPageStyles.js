@@ -3,7 +3,6 @@ export const getAuthPageClasses = (theme) => {
 
   return {
     // Overall page background with the main hero image
-    backgroundClasses: `min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative ${isDark ? 'bg-black text-white' : 'bg-gray-50 text-gray-900'}`,
     // Adding the background image inline in the component might be better, but we can do it via a generic class or just let it use the dark background. 
     // Actually, setting a very slick dark radial gradient is cleaner for Auth:
     backgroundClasses: `min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden relative ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,

@@ -11,10 +11,9 @@ import { toast } from 'react-toastify';
 const MyOrders = () => {
   const { theme } = useThemeStore();
   const styles = getMyOrdersStyles(theme);
-  const { myOrders, loadingMyOrders, errorMyOrders, fetchMyOrders, payForOrder, shipOrder } = useCartStore();
+  const { myOrders, loadingMyOrders, errorMyOrders, fetchMyOrders, payForOrder } = useCartStore();
   const { user } = useAuthStore();
   const [payingOrderId, setPayingOrderId] = useState(null);
-  const [shippingOrderId, setShippingOrderId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,18 +40,6 @@ const MyOrders = () => {
       // The Razorpay modal is asynchronous; we don't know when it closes.
       // We can reset the state here, but the UI will update when fetchMyOrders is called in the handler.
       setPayingOrderId(null);
-    }
-  };
-
-  const handleShipment = async (orderId) => {
-    setShippingOrderId(orderId);
-    try {
-      await shipOrder(orderId);
-      toast.success("Order has been shipped (simulated).");
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to ship order.");
-    } finally {
-      setShippingOrderId(null);
     }
   };
 

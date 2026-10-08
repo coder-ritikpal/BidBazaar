@@ -7,7 +7,6 @@ import { getEnrolledAuctionsStyles } from '@/styles/dashboard/enrolledAuctionsSt
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useCartStore } from '@/store/cartStore';
 import { getAuctionStatus as getClientAuctionStatus } from '@/lib/auctionStatus';
-import { useAuthStore } from '@/store/authStore';
 import { toast } from 'react-toastify';
 
 const YourAuctions = () => {
@@ -28,7 +27,6 @@ const YourAuctions = () => {
     fetchMyOrders,
     createOrder,
   } = useCartStore();
-  const { user } = useAuthStore();
   const [ongoingAuctions, setOngoingAuctions] = useState([]);
   const [completedAuctions, setCompletedAuctions] = useState([]);
   const [activeTab, setActiveTab] = useState('ongoing'); // New state for active tab
@@ -47,7 +45,6 @@ const YourAuctions = () => {
   }, []);
 
   useEffect(() => {
-    const wonAuctionIds = new Set(wonAuctions.map(a => a._id));
     const ongoing = auctions.filter(a => ['live', 'upcoming'].includes(getClientAuctionStatus(a, now)));
     const completed = auctions.filter(a =>
       ['ended', 'cancelled', 'expired'].includes(getClientAuctionStatus(a, now))

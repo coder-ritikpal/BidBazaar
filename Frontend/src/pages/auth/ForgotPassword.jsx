@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { toast } from 'react-toastify';
-import axios from 'axios';
 import { getAuthPageClasses } from '@/styles/auth/authPageStyles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-import { API_BASE_URL } from '@/utils/api';
 
 const ForgotPassword = () => {
   const theme = useThemeStore((state) => state.theme);
@@ -32,7 +30,6 @@ const ForgotPassword = () => {
     formLayoutClasses,
     inputGroupClasses,
     errorMessageClasses,
-    appNameHeadingClasses,
   } = getAuthPageClasses(theme);
 
   const handleChange = (e) => {

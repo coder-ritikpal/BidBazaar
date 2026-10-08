@@ -427,7 +427,7 @@ const AuctionDetailsPage = () => {
                       <li key={bid._id} className={`${classes.bidItem} ${isHighestBid ? classes.highestBidItem : ''}`}>
                         <div className={classes.bidItemInfo}>
                           <span className={classes.bidderName}>
-                            Bidder {String(bid.bidderId).slice(-6)}
+                            {bid.bidderLabel || 'Bidder'}
                             {isHighestBid && <span className={classes.highestBidBadge}>Highest</span>}
                           </span>
                           <span className={classes.bidTime}>{new Date(bid.createdAt).toLocaleString()}</span>

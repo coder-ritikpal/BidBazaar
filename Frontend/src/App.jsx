@@ -5,6 +5,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { useAuthStore } from '@/store/authStore'
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from './utils/api';
 import Loading from './pages/modules/Loading';
 
 const App = () => {
@@ -57,27 +58,34 @@ const App = () => {
   useEffect(() => {
     // Handle Google OAuth redirect
     const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const userString = params.get('user');
+    const code = params.get('code');
     const authFlow = params.get('auth_flow');
 
-    if (token && userString) {
-      try {
-        const user = JSON.parse(userString);
-        login(user, token, 'google');
-        window.history.replaceState({}, document.title, window.location.pathname); // Clean up URL
-        if (authFlow) sessionStorage.setItem('auth_flow', authFlow);
-        
-        const redirectPath = sessionStorage.getItem('redirect_after_login');
-        if (redirectPath) {
-          sessionStorage.removeItem('redirect_after_login');
-          navigate(redirectPath, { replace: true });
-        }
-      } catch (e) {
-        console.error("Failed to parse user data from Google OAuth callback:", e);
-      }
+    if (code) {
+      api.post(`/dashboard/auth/google/exchange`, { code })
+        .then(response => {
+          const { user, token } = response.data;
+          login(user, token, 'google');
+          window.history.replaceState({}, document.title, window.location.pathname); // Clean up URL
+          if (authFlow) sessionStorage.setItem('auth_flow', authFlow);
+
+          const redirectPath = sessionStorage.getItem('redirect_after_login');
+          if (redirectPath) {
+            sessionStorage.removeItem('redirect_after_login');
+            navigate(redirectPath, { replace: true });
+          }
+        })
+        .catch(e => {
+          console.error("Failed to exchange code:", e);
+          toast.error("Google sign-in failed. Please try again.");
+          window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .finally(() => {
+          checkAuthStatus();
+        });
+    } else {
+      checkAuthStatus();
     }
-    checkAuthStatus();
   }, [checkAuthStatus, login, navigate]);
 
   useEffect(() => {

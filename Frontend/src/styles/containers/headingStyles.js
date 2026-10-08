@@ -1,4 +1,4 @@
-export const getHeadingClasses = (theme) => {
+export const getHeadingClasses = () => {
   return {
     heroContainer: "w-full min-h-[90vh] md:min-h-screen flex flex-col items-center justify-start pt-[15vh] px-4 relative overflow-hidden bg-[url('/hero-bg.png')] bg-cover bg-center bg-no-repeat",
     contentWrapper: "relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center",

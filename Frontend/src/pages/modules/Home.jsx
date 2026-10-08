@@ -11,7 +11,6 @@ import { getHomePageClasses } from '@/styles/modules/homePageStyles';
 const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const theme = useThemeStore((state) => state.theme);
-  const isDark = theme === 'dark';
   const classes = getHomePageClasses(theme);
 
   return (

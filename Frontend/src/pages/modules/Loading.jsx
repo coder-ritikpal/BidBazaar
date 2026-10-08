@@ -31,7 +31,6 @@ const Loading = () => {
   const cardBgClass = isDark ? 'bg-gray-900 shadow-2xl border border-gray-800/60' : 'bg-white shadow-xl border border-slate-100';
   const titleClass = isDark ? 'text-gray-100' : 'text-slate-900';
   const textClass = isDark ? 'text-gray-400' : 'text-slate-500';
-  const loaderClass = isDark ? 'text-blue-500' : 'text-blue-600';
   const trackClass = isDark ? 'bg-gray-800' : 'bg-slate-200';
   const barClass = isDark ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' : 'bg-blue-600';
   const footnoteClass = isDark ? 'text-gray-500' : 'text-slate-400';

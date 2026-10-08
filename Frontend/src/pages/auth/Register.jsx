@@ -173,7 +173,6 @@ const Register = () => {
     checkboxContainerClasses, // Added
     errorMessageClasses, // Added
     googleLogoClasses, // Added
-    appNameHeadingClasses,
   } = getAuthPageClasses(theme);
 
   const handleGoogleRegister = () => {

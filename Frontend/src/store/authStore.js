@@ -5,7 +5,7 @@ import { useInventoryStore } from './inventoryStore';
 import { updateProfile as updateProfileApi } from '../data/api.js';
 import api, { API_BASE_URL } from '@/utils/api';
 
-export const useAuthStore = create((set, get) => ({
+export const useAuthStore = create((set) => ({
   isLoggedIn: !!localStorage.getItem('token'),
   user: null,
   token: localStorage.getItem('token'),
@@ -46,7 +46,7 @@ export const useAuthStore = create((set, get) => ({
     // 3. Optional background notification to backend (fire-and-forget, never blocks UI logout)
     try {
       await api.post('/dashboard/auth/logout');
-    } catch (error) {
+    } catch {
       // Intentionally suppressed: client is already fully logged out
     }
   },

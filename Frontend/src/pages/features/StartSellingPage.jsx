@@ -29,7 +29,6 @@ const PRODUCT_CATEGORIES = [
 const PRODUCT_CONDITIONS = ['New', 'Like New', 'Good', 'Fair', 'Used'];
 const PRODUCT_SIZE_UNITS = ['cm', 'inch', 'metre'];
 const PRODUCT_WEIGHT_UNITS = ['g', 'kg'];
-const REVIEW_WINDOW_MINUTES = import.meta.env.VITE_REVIEW_WINDOW_MINUTES || 30;
 
 const initialFormData = {
   title: '',
@@ -338,9 +337,6 @@ const StartSellingPage = () => {
     try {
       const uploadData = new FormData();
 
-      // Determine if the start time was changed by the user.
-      const isStartTimeChanged = formData.startAuctionAt !== originalStartAuctionAt;
-
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'images') {
           value.forEach((image) => uploadData.append('images', image));
@@ -561,7 +557,7 @@ const StartSellingPage = () => {
 
           <div className={classes.formGroup}>
             <label htmlFor="images" className={classes.label}>Upload Images (min 1, max 2)</label>
-            <input type="file" id="images" name="images" multiple accept="image/*" onChange={handleImageChange} className={classes.fileInput} />
+            <input type="file" id="images" name="images" multiple accept=".jpg,.jpeg,.png,.gif,.webp" onChange={handleImageChange} className={classes.fileInput} />
             {errors.images && <p className={classes.errorText}>{errors.images}</p>}
             {editProductId && existingImages.length > 0 && imagePreviews.length === 0 && (
               <div className={classes.imagePreviewContainer}>

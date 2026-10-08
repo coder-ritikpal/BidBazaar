@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
-import { Trash2, ShoppingBag, ArrowRight, ExternalLink, RefreshCw } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, RefreshCw } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { Button } from '@/components/ui/button';
 import { getWishlistStyles } from '@/styles/dashboard/wishlistStyles';
@@ -21,7 +21,7 @@ const Wishlist = () => {
     try {
       await removeFromWishlist(auctionId);
       toast.success('Removed from wishlist');
-    } catch (err) {
+    } catch {
       toast.error('Failed to remove item');
     }
   };

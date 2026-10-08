@@ -137,7 +137,7 @@ const LiveAuctionsFullPage = () => { // Renamed component
         await removeFromWishlist(id);
         toast.success('Removed from wishlist');
       } else {
-        const targetAuction = displayAuctions.find((a) => String(a.id || a._id) === id);
+        const targetAuction = auctionsToDisplay.find((a) => String(a.id || a._id) === id);
         await addToWishlist(id, targetAuction);
         toast.success('Added to wishlist');
       }

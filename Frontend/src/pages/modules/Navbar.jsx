@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'; // Import Link, useLocation, and useNavigate
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
-import { User, Search, Heart, Sun, MoonStar } from 'lucide-react'; // Import additional Lucide icons (X is now only in ProfileSidebar)
+import { User, Search, Sun, MoonStar } from 'lucide-react'; // Import additional Lucide icons (X is now only in ProfileSidebar)
 import { ProfileSidebar } from '@/pages/containers/ProfileSidebar'; // Import the new ProfileSidebar component
 import { useAuthStore } from '@/store/authStore'; // Import useAuthStore
 import { getNavbarClasses } from '@/styles/modules/navbarStyles'; // Import the utility function
@@ -16,7 +16,7 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
   const location = useLocation();
   const { theme, toggleTheme } = useThemeStore(); // Get theme and toggleTheme from Zustand store
   const navigate = useNavigate(); // For programmatic navigation after logout
-  const { isLoggedIn, logout, loginMethod, user } = useAuthStore(); // Get isLoggedIn, logout, loginMethod, and user from auth store
+  const { isLoggedIn } = useAuthStore();
 
   // Determine if current page is a login/register page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password';
@@ -80,7 +80,6 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
     rightSideButtonsContainerClasses,
     helpButtonClasses,
     mobileSearchTriggerButtonClasses,
-    wishlistButtonClasses,
     themeToggleButtonClasses,
     joinButtonClasses,
     loginIconClasses, // Add loginIconClasses back to destructuring

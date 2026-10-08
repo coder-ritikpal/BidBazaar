@@ -1,15 +1,6 @@
 export const getStartSellingPageClasses = (theme) => {
   const isDark = theme === 'dark';
   const textColor = isDark ? 'text-gray-100' : 'text-gray-900';
-  const bgColor = isDark ? 'bg-black' : 'bg-gray-50';
-  const formBg = isDark ? 'bg-gray-900' : 'bg-white';
-  const inputBorder = isDark ? 'border-gray-600' : 'border-gray-300';
-  const inputFocus = isDark ? 'focus:border-purple-500 focus:ring-purple-500' : 'focus:border-purple-600 focus:ring-purple-600';
-  const buttonBg = 'bg-purple-600 hover:bg-purple-700';
-  const buttonText = 'text-white';
-  const errorColor = 'text-red-500';
-  const successColor = 'text-green-500';
-
   return {
     container: `min-h-screen flex flex-col ${isDark ? 'bg-[#050510]' : 'bg-gray-50'} ${textColor} transition-colors duration-300`,
     mainContent: 'flex-grow container mx-auto px-4 py-12 md:px-6 lg:px-8 max-w-4xl',
