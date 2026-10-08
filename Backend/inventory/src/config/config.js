@@ -21,7 +21,7 @@ const _config = {
   RABBITMQ_URL: process.env.RABBITMQ_URL || "amqp://localhost",
 };
 
-if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+if (process.env.NODE_ENV !== 'test' && !_config.INTERNAL_AUTH_TOKEN_SECRET) {
   console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
   process.exit(1);
 }

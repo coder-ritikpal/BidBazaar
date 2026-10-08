@@ -58,9 +58,9 @@ npm install
 ```
 Create a `.env` file in the `Frontend/` root (or `.env.development` / `.env.production`):
 ```env
-VITE_API_URL_DASHBOARD=http://localhost:5000/api
+VITE_API_URL_DASHBOARD=http://localhost:3004/api
 VITE_API_URL_AUTH=http://localhost:3000/api
-VITE_API_URL_FEATURES=http://localhost:3003/api
+VITE_API_URL_FEATURES=http://localhost:3002/api
 # Add other services as required
 ```
 
