@@ -1,13 +1,18 @@
 import app from './src/app.js';
 import connectDB from './src/db/db.js';
 
-// Only connect to the database and RabbitMQ if not in a test environment
+const PORT = process.env.PORT || 3004;
+
 if (process.env.NODE_ENV !== 'test') {
-  connectDB();
+  (async () => {
+    try {
+      await connectDB();
+      app.listen(PORT, () => {
+        console.log(`Dashboard server is running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Failed to start Dashboard service:", error);
+      process.exit(1);
+    }
+  })();
 }
- 
- const PORT = process.env.PORT || 3004;
- 
-if(process.env.NODE_ENV !== 'test'){app.listen(PORT, () => {
-  console.log(`Dashboard server is running on port ${PORT}`);
-});}

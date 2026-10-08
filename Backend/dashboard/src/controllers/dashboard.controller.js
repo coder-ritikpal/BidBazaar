@@ -1,10 +1,28 @@
 import wishlistModel from "../models/wishlist.model.js";
 import config from "../config/config.js";
 
+const toPublicError = (error) => {
+  const statusCode = error.statusCode || 500;
+  const upstream = error.data;
+  const message = statusCode < 500 && typeof upstream?.message === "string"
+    ? upstream.message
+    : statusCode === 502
+      ? "Bad gateway."
+      : statusCode < 500
+        ? "Request failed."
+        : "Internal server error.";
+
+  const response = { message };
+  if (statusCode < 500 && Array.isArray(upstream?.errors)) {
+    response.errors = upstream.errors.map(({ msg, path }) => ({ msg, path }));
+  }
+  return response;
+};
+
 // Render can take longer than a minute to wake a sleeping instance. Keep the
 // retries server-side so the browser makes one request instead of repeatedly
-// hammering the service while it is starting.
-const RENDER_COLD_START_DELAYS_MS = [2000, 4000, 8000, 16000, 24000, 30000, 30000];
+// hammering the service while it is starting. (Sum = 60s to fit within hosting timeouts)
+const RENDER_COLD_START_DELAYS_MS = [2000, 4000, 8000, 16000, 30000];
 
 const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
@@ -246,7 +264,7 @@ export const getWishlist = async (req, res) => {
 
     res.status(200).json({ message: "Wishlist fetched successfully.", wishlist });
   } catch (error) {
-    res.status(500).json({ message: "Failed to fetch wishlist.", error: error.message });
+    res.status(500).json({ message: "Failed to fetch wishlist." });
   }
 };
 
@@ -298,7 +316,7 @@ export const addToWishlist = async (req, res) => {
     if (error?.code === 11000) {
       return res.status(200).json({ message: "Item already in wishlist" });
     }
-    res.status(500).json({ message: "Failed to add to wishlist.", error: error.message });
+    res.status(500).json({ message: "Failed to add to wishlist." });
   }
 };
 
@@ -318,7 +336,7 @@ export const removeFromWishlist = async (req, res) => {
     await wishlistModel.findOneAndDelete({ userId, auctionId });
     res.status(200).json({ message: "Removed from wishlist." });
   } catch (error) {
-    res.status(500).json({ message: "Failed to remove from wishlist.", error: error.message });
+    res.status(500).json({ message: "Failed to remove from wishlist." });
   }
 };
 
@@ -328,7 +346,7 @@ export const getEnrolledAuctions = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -338,7 +356,7 @@ export const getAllAuctions = async (req, res) => {
     const data = await forwardPublicRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -350,7 +368,7 @@ export const getAuctionByIdBFF = async (req, res) => {
     const data = await forwardPublicRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -361,7 +379,7 @@ export const getAuctionBidsBFF = async (req, res) => {
     const data = await forwardPublicRequest(req, url); // Bids are public
     res.status(200).json(data);
   } catch (error)  {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -372,7 +390,7 @@ export const bidOnAuctionBFF = async (req, res) => {
     const data = await forwardRequest(req, url); // Bidding requires auth
     res.status(201).json(data);
   } catch (error)  {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -384,7 +402,7 @@ export const getProductByIdBFF = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error("[Dashboard BFF] Error in getProductByIdBFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 export const updateProfile = async (req, res) => {
@@ -393,7 +411,7 @@ export const updateProfile = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -404,7 +422,7 @@ export const getMyOrders = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -414,7 +432,7 @@ export const createOrder = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(201).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -425,7 +443,7 @@ export const shipOrder = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -436,7 +454,7 @@ export const getOrderByIdBFF = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -447,7 +465,7 @@ export const confirmDeliveryBFF = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -458,7 +476,7 @@ export const createPaymentOrder = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -468,7 +486,7 @@ export const verifyPayment = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -478,7 +496,7 @@ export const getWonAuctions = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -488,7 +506,7 @@ export const getListedItems = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -499,7 +517,7 @@ export const getSoldItems = async (req, res) => {
     const data = await forwardRequest(req, url);
     res.status(200).json(data);
   } catch (error) {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -527,7 +545,7 @@ export const registerUserBFF = async (req, res) => {
     res.status(201).json({ message: data.message, user: data.user, token: data.token }); // Include token
   } catch (error) {
     console.error("Error during registration via BFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -539,7 +557,7 @@ export const createProductBFF = async (req, res) => {
     res.status(201).json(data); // Respond with 201 Created for successful resource creation
   } catch (error) {
     console.error("[Dashboard BFF] Error in createProductBFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 export const updateProductBFF = async (req, res) => {
@@ -550,7 +568,7 @@ export const updateProductBFF = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error("[Dashboard BFF] Error in updateProductBFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -562,7 +580,7 @@ export const deleteProductBFF = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error("[Dashboard BFF] Error in deleteProductBFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -573,7 +591,7 @@ export const getUserPublicProfileBFF = async (req, res) => {
     const data = await forwardPublicRequest(req, url);
     res.status(200).json(data);
   } catch (error)  {
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -599,7 +617,7 @@ export const loginUserBFF = async (req, res) => {
     res.status(200).json({ message: data.message, user: data.user, token: data.token }); // Include token
   } catch (error) {
     console.error("Error during login via BFF:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };
 
@@ -616,24 +634,38 @@ export const googleAuthBFF = async (req, res) => {
 
 export const googleAuthCallbackBFF = async (req, res) => {
   try {
-    const { token, user: userString } = req.query;
+    const { code } = req.query;
 
-    if (!token || !userString) {
+    if (!code) {
       return res.redirect(`${config.FRONTEND_URL}/login?error=google_auth_failed`);
     }
 
-    // Token and user are received from auth service. Redirect to frontend with them.
-
-    // Verify the token received from the auth service (optional but good practice)
-    //   jwt.verify(token, config.JWT_SECRET);
-    // } catch (err) {
-    //   console.error("Invalid token received from auth service:", err);
-    //   return res.redirect(`${config.FRONTEND_URL}/login?error=invalid_token`);
-    // }
-    res.redirect(`${config.FRONTEND_URL}?token=${token}&user=${userString}&auth_flow=google_login`);
+    res.redirect(`${config.FRONTEND_URL}?code=${code}&auth_flow=google_login`);
   } catch (error) {
     console.error("Error during Google OAuth callback via BFF:", error);
     res.redirect(`${config.FRONTEND_URL}/login?error=google_auth_failed`);
+  }
+};
+
+export const exchangeGoogleCodeBFF = async (req, res) => {
+  try {
+    const url = new URL('/api/auth/google/exchange', config.AUTH_SERVICE_URL);
+    const authResponse = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(req.body),
+    });
+
+    const data = await authResponse.json();
+
+    if (!authResponse.ok) {
+      return res.status(authResponse.status).json(data);
+    }
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error exchanging Google code via BFF:", error);
+    res.status(500).json({ message: "Internal server error during token exchange." });
   }
 };
 
@@ -651,6 +683,6 @@ export const getProfile = async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error("[Dashboard BFF] Error in getProfile:", error);
-    res.status(error.statusCode || 500).json(error.data || { message: error.message });
+    res.status(error.statusCode || 500).json(toPublicError(error));
   }
 };

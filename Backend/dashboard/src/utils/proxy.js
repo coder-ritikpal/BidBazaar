@@ -72,7 +72,7 @@ export const createProxyHandler = (targetBaseUrl) => {
       const buffer = Buffer.from(await upstream.arrayBuffer());
       res.send(buffer);
     } catch (error) {
-      res.status(502).json({ message: "Bad gateway", error: error.message });
+      res.status(502).json({ message: "Bad gateway" });
     }
   };
 };

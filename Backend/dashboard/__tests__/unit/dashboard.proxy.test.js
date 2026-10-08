@@ -133,7 +133,8 @@ describe("dashboard proxy routes", () => {
       .set("Authorization", `Bearer ${token}`);
 
     expect(res.status).toBe(503);
-    expect(res.body).toEqual({ message: "Cart unavailable" });
+    // toPublicError sanitizes 5xx downstream errors to prevent leakages
+    expect(res.body).toEqual({ message: "Internal server error." });
   });
 
   test("forwards registration data and returns the auth token", async () => {

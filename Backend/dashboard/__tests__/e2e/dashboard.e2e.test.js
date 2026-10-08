@@ -188,6 +188,7 @@ describe("Dashboard BFF", () => {
     const res = await request(app).get("/api/dashboard/auctions");
 
     expect(res.status).toBe(503);
-    expect(res.body).toEqual({ message: "Auctions unavailable" });
+    // toPublicError sanitizes 5xx errors to prevent leaking upstream internals
+    expect(res.body).toEqual({ message: "Internal server error." });
   });
 });
