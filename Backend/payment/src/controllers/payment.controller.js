@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import config from '../config/config.js'; // Assuming config file for secrets
 import jwt from 'jsonwebtoken';
 import Payment from '../models/payment.model.js';
+import { doFetch } from '../utils/fetch.js';
 
 const razorpayInstance = new Razorpay({
   key_id: config.RAZORPAY_KEY_ID,
@@ -16,7 +17,7 @@ const fetchOrderFromCartService = async (orderId, authHeader) => {
   
   const url = new URL(`/api/orders/${orderId}`, config.CART_SERVICE_URL);
   
-  const response = await fetch(url, {
+  const response = await doFetch(url, {
     headers: {
       'Authorization': authHeader,
       'Content-Type': 'application/json'
@@ -94,9 +95,10 @@ export const createOrder = async (req, res) => {
     res.status(200).json(razorpayOrder);
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
-    res.status(error.message === 'Order not found.' ? 404 : 500).json({ 
-      message: 'Failed to create payment order.', 
-      error: error.message 
+    res.status(error.message === 'Order not found.' ? 404 : 500).json({
+      message: error.message === 'Order not found.'
+        ? 'Order not found.'
+        : 'Failed to create payment order.',
     });
   }
 };
@@ -132,8 +134,8 @@ export const verifyPayment = async (req, res) => {
         return res.status(400).json({ message: "Payment validation failed: Order mismatch or tampered request." });
       }
 
-      if (payment.status === 'captured') {
-        return res.status(200).json({ message: "Payment already verified and captured." });
+      if (payment.razorpayPaymentId && payment.razorpayPaymentId !== razorpay_payment_id) {
+        return res.status(400).json({ message: "Payment validation failed: Order mismatch or tampered request." });
       }
 
       if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
@@ -141,18 +143,12 @@ export const verifyPayment = async (req, res) => {
         throw new Error("Internal server configuration error.");
       }
 
-      // Update payment record locally before calling cart service
-      payment.status = 'captured';
-      payment.razorpayPaymentId = razorpay_payment_id;
-      payment.razorpaySignature = razorpay_signature;
-      await payment.save();
-
       // Create an internal token to authenticate with the cart service
       const internalToken = jwt.sign({ id: userId, service: 'payment-service' }, config.INTERNAL_AUTH_TOKEN_SECRET, { expiresIn: '5m' });
 
       const cartServiceUrl = new URL(`/api/orders/${internal_order_id}/pay`, config.CART_SERVICE_URL);
 
-      const cartResponse = await fetch(cartServiceUrl, {
+      const cartResponse = await doFetch(cartServiceUrl, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${internalToken}`,
@@ -163,8 +159,17 @@ export const verifyPayment = async (req, res) => {
       if (!cartResponse.ok) {
         const cartData = await cartResponse.json().catch(() => ({ message: 'Failed to parse cart service response.' }));
         console.error('Error updating order status in cart service:', cartData.message);
-        return res.status(502).json({ message: "Payment verified, but failed to update order status. Please contact support.", verificationError: cartData.message });
+        return res.status(502).json({
+          message: "Payment verified, but failed to update order status. Please contact support.",
+        });
       }
+
+      // The cart update is idempotent, so retries can recover if either service
+      // temporarily fails. Persist captured status only after the order is paid.
+      payment.status = 'captured';
+      payment.razorpayPaymentId = razorpay_payment_id;
+      payment.razorpaySignature = razorpay_signature;
+      await payment.save();
 
       res.status(200).json({ message: "Payment verified and order updated successfully." });
     } catch (error) {
@@ -243,7 +248,7 @@ export const razorpayWebhook = async (req, res) => {
 
         const cartServiceUrl = new URL(`/api/orders/${internalOrderId}/pay`, config.CART_SERVICE_URL);
 
-        const cartResponse = await fetch(cartServiceUrl, {
+        const cartResponse = await doFetch(cartServiceUrl, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${internalToken}`,

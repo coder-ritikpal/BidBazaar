@@ -7,5 +7,6 @@ export default {
   displayName: 'payment',
   rootDir: '.',
   testMatch: ['<rootDir>/__tests__/unit/**/*.test.js'],
+  setupFiles: ['<rootDir>/test/env.js'],
   setupFilesAfterEnv: ['<rootDir>/test/setup.js'],
 };

@@ -12,9 +12,25 @@ const token = jwt.sign({ id: 'user-1' }, process.env.JWT_SECRET);
 const body = () => ({ razorpay_order_id: 'r1', razorpay_payment_id: 'p1', razorpay_signature: signatureFor(), internal_order_id: 'o1' });
 const response = (data, status = 200) => ({ ok: status >= 200 && status < 300, status, json: jest.fn().mockResolvedValue(data) });
 
+import Payment from '../../src/models/payment.model.js';
+
 describe('POST /api/payments/verify', () => {
-  beforeEach(() => { jest.clearAllMocks(); global.fetch = jest.fn(); });
-  afterEach(() => delete global.fetch);
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    global.fetch = jest.fn();
+    await Payment.create({
+      orderId: 'o1',
+      userId: 'user-1',
+      razorpayOrderId: 'r1',
+      amount: 100,
+      currency: 'INR',
+      status: 'pending'
+    });
+  });
+  afterEach(async () => {
+    delete global.fetch;
+    await Payment.deleteMany({});
+  });
 
   test('rejects invalid signatures', async () => {
     const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send({ ...body(), razorpay_signature: 'bad' });
@@ -34,7 +50,22 @@ describe('POST /api/payments/verify', () => {
     global.fetch.mockResolvedValueOnce(response({ message: 'Cart unavailable' }, 503));
     const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send(body());
     expect(res.status).toBe(502);
-    expect(res.body.verificationError).toBe('Cart unavailable');
+    expect(res.body).not.toHaveProperty('verificationError');
+    const payment = await Payment.findOne({ orderId: 'o1' });
+    expect(payment.status).toBe('pending');
+  });
+
+  test('retries cart update for an already captured payment', async () => {
+    await Payment.updateOne({ orderId: 'o1' }, {
+      $set: { status: 'captured', razorpayPaymentId: 'p1', razorpaySignature: signatureFor() },
+    });
+    global.fetch.mockResolvedValueOnce(response({ message: 'Order is already paid.' }));
+
+    const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send(body());
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toMatch(/verified and order updated/);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   test('returns 500 when internal order id is missing', async () => {
@@ -48,6 +79,6 @@ describe('POST /api/payments/verify', () => {
     global.fetch.mockResolvedValueOnce({ ok: false, status: 502, json: jest.fn().mockRejectedValue(new Error('invalid json')) });
     const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send(body());
     expect(res.status).toBe(502);
-    expect(res.body.verificationError).toBe('Failed to parse cart service response.');
+    expect(res.body).not.toHaveProperty('verificationError');
   });
 });

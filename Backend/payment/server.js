@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import config from './src/config/config.js';
 import paymentRoutes from './src/routes/payment.routes.js';
 import { connectToRabbitMQ } from './src/broker/rabbit.js';
+import connectDB from './src/db/db.js';
 
 const app = express();
 
@@ -44,10 +45,21 @@ app.use((err, req, res, next) => {
   res.status(500).send('Something broke!');
 });
 
-app.listen(config.PORT, () => {
-  console.log(`Payment service running on port ${config.PORT}`);
-});
+const startServer = async () => {
+  try {
+    await connectDB();
 
-// Message-broker availability must not prevent HTTP health checks (or payment
-// requests) from reaching this service. The broker module retries on failure.
-connectToRabbitMQ();
+    app.listen(config.PORT, () => {
+      console.log(`Payment service running on port ${config.PORT}`);
+    });
+
+    // Message-broker availability must not prevent HTTP health checks (or payment
+    // requests) from reaching this service. The broker module retries on failure.
+    connectToRabbitMQ();
+  } catch (error) {
+    console.error("Failed to start payment service:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
