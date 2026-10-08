@@ -5,6 +5,7 @@ import {
   loginUser,
   logoutUser,
   googleAuthCallback,
+  exchangeGoogleCode,
   getMe, // Import the new getMe function
   getUserPublicProfile,
   updateProfile,
@@ -26,6 +27,7 @@ router.get('/google', passport.authenticate('google', {
   scope: ['profile', 'email'],
 }));
 router.get('/google/callback', passport.authenticate('google',{session: false,failureRedirect: '/login' }), googleAuthCallback);
+router.post('/google/exchange', exchangeGoogleCode);
 
 router.get('/me', protect, getMe); // Protected route to get current user details
 router.put('/me', protect, updateProfile); // Protected route to update current user details

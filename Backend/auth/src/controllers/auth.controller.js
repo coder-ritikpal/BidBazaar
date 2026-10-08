@@ -75,6 +75,9 @@ export const registerUser = async (req, res) => {
   }
 };
 
+import crypto from 'crypto';
+import authCodeModel from '../models/authCode.model.js';
+
 export async function googleAuthCallback(req, res) {
   try {
     const user = req.user;
@@ -97,14 +100,45 @@ export async function googleAuthCallback(req, res) {
       googleId: user.googleId
     };
 
-    // Redirect back to the dashboard service with the token as a query parameter
-return res.redirect(
-  `${config.DASHBOARD_SERVICE_URL}/api/dashboard/auth/google/callback?token=${encodeURIComponent(token)}&user=${encodeURIComponent(JSON.stringify(userForRedirect))}`
-    );  } catch (error) {
+    const code = crypto.randomUUID();
+    await authCodeModel.create({
+      code,
+      token,
+      user: userForRedirect,
+      expiresAt: new Date(Date.now() + 60000) // 1 minute expiry
+    });
+
+    // Redirect back to the dashboard service with the code as a query parameter
+    return res.redirect(
+      `${config.DASHBOARD_SERVICE_URL}/api/dashboard/auth/google/callback?code=${code}`
+    );
+  } catch (error) {
     console.error("Error in Google auth callback:", error);
     return res.redirect(`${FRONTEND_URL}/login?error=google_auth_failed`);
   }
 }
+
+export const exchangeGoogleCode = async (req, res) => {
+  try {
+    const { code } = req.body;
+
+    if (!code || typeof code !== 'string') {
+      return res.status(400).json({ message: "Invalid or missing code" });
+    }
+
+    // Atomically find and delete to ensure single-use
+    const authCode = await authCodeModel.findOneAndDelete({ code });
+
+    if (!authCode || authCode.expiresAt < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    return res.status(200).json({ token: authCode.token, user: authCode.user });
+  } catch (error) {
+    console.error("Error exchanging Google code:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 export const loginUser = async (req, res) => {
   try {
@@ -239,9 +273,9 @@ export const updateProfile = async (req, res) => {
     for (const key of allowedUpdates) {
       if (updates[key] !== undefined) { // Check if the field is present in the request body
         // Handle nested fullName fields
-        if (key === 'firstName' || key === 'lastName') { 
+        if (key === 'firstName' || key === 'lastName') {
           // Ensure fullName object exists before accessing its properties
-          if (!user.fullName) user.fullName = {}; 
+          if (!user.fullName) user.fullName = {};
           if (user.fullName[key] !== updates[key]) {
             user.fullName[key] = updates[key];
             hasChanges = true;

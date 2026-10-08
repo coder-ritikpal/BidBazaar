@@ -5,12 +5,14 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import config from "./config/config.js";
 import cors from "cors";
+import helmet from "helmet";
 import userModel from "./models/user.model.js";
 import { publishToQueue } from "./broker/rabbit.js";
 import cookieParser from "cookie-parser";
 
 const app = express();
 
+app.use(helmet());
 
 const isTest =
   process.env.NODE_ENV === "test" || process.env.JEST_WORKER_ID !== undefined;
