@@ -8,14 +8,15 @@ import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
 import jwt from "jsonwebtoken";
 import { getCache, setCache, clearCache, setNxCache } from "../cache/redis.js";
 
+
 const triggerAutoCreateOrder = (auction, retries = 5, initialDelay = 2000) => {
   if (!config.CART_SERVICE_URL || !config.INTERNAL_AUTH_TOKEN_SECRET) {
     console.error("Missing config for internal cart service call.");
     return;
   }
-  
+
   const url = new URL('/api/orders/internal/auto-create', config.CART_SERVICE_URL);
-  
+
   const attempt = async (currentRetry, delay) => {
     try {
       const internalToken = jwt.sign(
@@ -32,16 +33,21 @@ const triggerAutoCreateOrder = (auction, retries = 5, initialDelay = 2000) => {
         },
         body: JSON.stringify({ auctionId: auction._id })
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
+
+      auction.orderCreatedAt = new Date();
+      await auction.save();
+
       console.log(`Order auto-created successfully for auction ${auction._id}`);
     } catch (err) {
       if (currentRetry > 0) {
         console.warn(`Failed to auto-create order for auction ${auction._id}. Retrying in ${delay}ms... (${currentRetry} retries left). Error: ${err.message}`);
-        setTimeout(() => attempt(currentRetry - 1, delay * 2), delay);
+        const retryTimer = setTimeout(() => attempt(currentRetry - 1, delay * 2), delay);
+        retryTimer.unref?.();
       } else {
         console.error(`CRITICAL: Exhausted all retries for auto-creating order for auction ${auction._id}. Error:`, err);
       }
@@ -50,7 +56,7 @@ const triggerAutoCreateOrder = (auction, retries = 5, initialDelay = 2000) => {
 
   attempt(retries, initialDelay);
 };
- 
+
 const MIN_AUCTION_DURATION_MS = (config.MIN_AUCTION_DURATION_MINUTES || 5) * 60 * 1000;
 const toDurationMs = (duration, unit = "days") => {
   const parsedDuration = Number(duration || 0);
@@ -123,11 +129,11 @@ export const processAuctionTransitions = async (auction) => {
       if (winningBid) {
         const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
           { _id: auction._id, winnerId: { $exists: false } },
-          { 
-            $set: { 
-              winnerId: winningBid.bidderId, 
-              winningBidId: winningBid._id 
-            } 
+          {
+            $set: {
+              winnerId: winningBid.bidderId,
+              winningBidId: winningBid._id
+            }
           },
           { new: true }
         );
@@ -135,9 +141,9 @@ export const processAuctionTransitions = async (auction) => {
         if (atomicallyUpdatedAuction) {
           auction.winnerId = atomicallyUpdatedAuction.winnerId;
           auction.winningBidId = atomicallyUpdatedAuction.winningBidId;
-          
+
           triggerAutoCreateOrder(atomicallyUpdatedAuction);
-          
+
           import('../broker/rabbit.js').then(({ publishToQueue }) => {
             publishToQueue('auction_won', {
               auctionId: atomicallyUpdatedAuction._id.toString(),
@@ -173,12 +179,16 @@ export const processAuctionTransitions = async (auction) => {
 export const toAuctionResponse = async (auction) => {
   const endAuctionAtTime = getAuctionEndTime(auction).getTime();
   const currentStatus = getAuctionStatus(auction);
-
-  return {
+  const response = {
     ...auction.toObject(),
     status: currentStatus,
     endAuctionAt: new Date(endAuctionAtTime),
   };
+
+  // This private mapping is used internally to assign stable public labels.
+  // Never expose bidder ObjectIds through the public auction response.
+  delete response.uniqueBidders;
+  return response;
 };
 
 export const createAuction = async (req, res) => {
@@ -246,7 +256,6 @@ export const createAuction = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to create auction",
-      error: error.message,
     });
   }
 };
@@ -262,13 +271,13 @@ export const getAuctions = async (_req, res) => {
     }
 
     const now = new Date();
-    
-    // Only return auctions that are NOT cancelled, and 
+
+    // Only return auctions that are NOT cancelled, and
     // whose hide time (deleteAt) is either not set yet or is still in the future.
     const auctions = await auctionModel.find({
       $and: [
         { cancelledAt: null },
-        { 
+        {
           $or: [
             { deleteAt: null },
             { deleteAt: { $gt: now } }
@@ -290,7 +299,6 @@ export const getAuctions = async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch auctions",
-      error: error.message,
     });
   }
 };
@@ -305,7 +313,7 @@ export const getAuctionById = async (req, res) => {
     // In this architecture the user model/data may live in a different service/DB,
     // and populating would resolve to `null` and break the UI.
     const auction = await auctionModel.findById(req.params.auctionId);
-    
+
     if (!auction) {
       return res.status(404).json({ message: "Auction not found" });
     }
@@ -320,7 +328,6 @@ export const getAuctionById = async (req, res) => {
     }
     res.status(500).json({
       message: "Failed to fetch auction due to a server error.",
-      error: error.message,
     });
   }
 };
@@ -328,11 +335,16 @@ export const getAuctionById = async (req, res) => {
 export const auctionBid = async (req, res) => {
   try {
     const { auctionId } = req.params;
-    const { amount } = req.body;
+    let { amount } = req.body;
     const bidderId = req.user?.id;
 
     if (!bidderId) {
       return res.status(401).json({ message: "Unauthorized. Please log in to bid." });
+    }
+
+    amount = Number(amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return res.status(400).json({ message: "Bid amount must be a positive number." });
     }
 
     if (!mongoose.Types.ObjectId.isValid(auctionId)) {
@@ -349,7 +361,7 @@ export const auctionBid = async (req, res) => {
     if (auctionStatus !== "live") {
       return res.status(400).json({ message: `Auction is not live. Current status: ${auctionStatus}` });
     }
-    
+
     if (auction.sellerId.toString() === bidderId) {
       return res.status(403).json({ message: "You cannot bid on your own auction." });
     }
@@ -362,6 +374,48 @@ export const auctionBid = async (req, res) => {
       return res.status(400).json({ message: "Bid amount must be in multiples of 10." });
     }
 
+    // Older auctions predate uniqueBidders. Backfill their bidders from bid
+    // history once so labels continue after the existing bidders.
+    if ((!Array.isArray(auction.uniqueBidders) || auction.uniqueBidders.length === 0)
+      && Array.isArray(auction.bids) && auction.bids.length > 0) {
+      const historicalBids = await bidModel.find({ auctionId })
+        .sort({ createdAt: 1, _id: 1 })
+        .select("bidderId")
+        .lean();
+      const historicalBidders = [];
+      const seenBidders = new Set();
+
+      for (const bid of historicalBids) {
+        const id = String(bid.bidderId);
+        if (!seenBidders.has(id)) {
+          seenBidders.add(id);
+          historicalBidders.push(new mongoose.Types.ObjectId(id));
+        }
+      }
+
+      if (historicalBidders.length > 0) {
+        const migratedAuction = await auctionModel.findOneAndUpdate(
+          {
+            _id: auctionId,
+            $or: [
+              { uniqueBidders: { $exists: false } },
+              { uniqueBidders: { $size: 0 } },
+            ],
+          },
+          { $set: { uniqueBidders: historicalBidders } },
+          { new: true },
+        );
+
+        if (migratedAuction) {
+          auction.uniqueBidders = migratedAuction.uniqueBidders;
+        } else {
+          // Another bid request may have completed the same migration first.
+          const currentAuction = await auctionModel.findById(auctionId).select("uniqueBidders");
+          auction.uniqueBidders = currentAuction?.uniqueBidders || [];
+        }
+      }
+    }
+
     // Rate limiting: allow only one bid per minute per user, atomically
     const rateLimitKey = `rate_limit:bid:${bidderId}`;
     const lockAcquired = await setNxCache(rateLimitKey, true, 60);
@@ -369,15 +423,15 @@ export const auctionBid = async (req, res) => {
     if (!lockAcquired) {
       // Fallback to checking DB if Redis isn't active/working or if genuinely limited
       const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-      const recentBid = await bidModel.findOne({ 
-        bidderId, 
-        createdAt: { $gte: oneMinuteAgo } 
+      const recentBid = await bidModel.findOne({
+        bidderId,
+        createdAt: { $gte: oneMinuteAgo }
       });
 
       if (recentBid) {
         const waitSeconds = Math.ceil((recentBid.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
-        return res.status(429).json({ 
-          message: `You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.` 
+        return res.status(429).json({
+          message: `You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.`
         });
       }
     }
@@ -394,16 +448,43 @@ export const auctionBid = async (req, res) => {
     });
     await newBid.save(); // Wait for bid to be written
 
-    // 2. Atomically update the auction ONLY IF currentPrice is still less than amount
+    // 2. Atomically update the auction ONLY IF currentPrice is still less than amount.
+    //    Append a bidder only once. $concatArrays makes the numbering order explicit;
+    //    $addToSet does not guarantee array order.
+    const bidderObjectId = new mongoose.Types.ObjectId(bidderId);
     const updatedAuction = await auctionModel.findOneAndUpdate(
-      { 
-        _id: auctionId, 
-        currentPrice: { $lt: amount } 
+      {
+        _id: auctionId,
+        currentPrice: { $lt: amount }
       },
-      { 
-        $set: { currentPrice: amount },
-        $push: { bids: bidId }
-      },
+      [{
+        $set: {
+          currentPrice: { $literal: amount },
+          bids: {
+            $concatArrays: [
+              { $ifNull: ["$bids", []] },
+              [{ $literal: bidId }],
+            ],
+          },
+          uniqueBidders: {
+            $let: {
+              vars: { existing: { $ifNull: ["$uniqueBidders", []] } },
+              in: {
+                $cond: [
+                  { $in: [{ $literal: bidderObjectId }, "$$existing"] },
+                  "$$existing",
+                  {
+                    $concatArrays: [
+                      "$$existing",
+                      [{ $literal: bidderObjectId }],
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }],
       { new: true }
     );
 
@@ -411,21 +492,36 @@ export const auctionBid = async (req, res) => {
       // 3. Update failed due to race condition (price increased), rollback the bid
       await bidModel.findByIdAndDelete(bidId);
       const currentAuction = await auctionModel.findById(auctionId);
-      return res.status(400).json({ 
-        message: `Bid rejected. The current price has increased to Rs.${currentAuction?.currentPrice || auction.currentPrice}.` 
+      return res.status(400).json({
+        message: `Bid rejected. The current price has increased to Rs.${currentAuction?.currentPrice || auction.currentPrice}.`
       });
     }
 
-    // Emit a real-time event to all clients in the auction room
+    // Emit a real-time event to all clients in the auction room.
+    // The bidder label is derived from uniqueBidders (returned by the atomic update above)
+    // — no second DB query needed, labels are stable and persisted.
     const io = req.app.get('io');
     if (io) {
+      const bidderIdStr = String(bidderId);
+      const bidderIndex = updatedAuction.uniqueBidders.findIndex(
+        (id) => String(id) === bidderIdStr
+      );
+      // findIndex returns -1 only if something went very wrong; fall back gracefully.
+      const bidderLabel = bidderIndex >= 0
+        ? `Bidder ${bidderIndex + 1}`
+        : `Bidder ?`;
+
       io.to(auctionId).emit('new_bid', {
         auctionId,
         currentPrice: updatedAuction.currentPrice,
-        bid: newBid,
+        bid: {
+          amount: newBid.amount,
+          createdAt: newBid.createdAt,
+          bidderLabel,
+        },
       });
     }
-    
+
     // Publish auction_join event to rabbitmq
     import('../broker/rabbit.js').then(({ publishToQueue }) => {
       publishToQueue('auction_join', {
@@ -438,7 +534,7 @@ export const auctionBid = async (req, res) => {
     res.status(201).json({ message: "Bid placed successfully.", bid: newBid });
   } catch (error) {
     console.error("Error placing bid:", error);
-    res.status(500).json({ message: "Failed to place bid.", error: error.message });
+    res.status(500).json({ message: "Failed to place bid." });
   }
 };
 
@@ -450,12 +546,42 @@ export const getBidsForAuction = async (req, res) => {
       return res.status(400).json({ message: "Invalid auction ID format." });
     }
 
-    const bids = await bidModel.find({ auctionId }).sort({ createdAt: -1 });
+    // Fetch bids in chronological order so legacy auctions without uniqueBidders
+    // can still show the right bidder labels.
+    const [auction, chronologicalBids] = await Promise.all([
+      auctionModel.findById(auctionId).select("uniqueBidders").lean(),
+      bidModel.find({ auctionId }).sort({ createdAt: 1, _id: 1 }),
+    ]);
 
-    res.status(200).json({ message: "Bids fetched successfully.", bids });
+    if (!auction) {
+      return res.status(404).json({ message: "Auction not found." });
+    }
+
+    // Prefer the persisted ordering, backfilling labels from chronological bid
+    // history for auctions created before uniqueBidders was introduced.
+    const bidderOrder = Array.isArray(auction.uniqueBidders) && auction.uniqueBidders.length > 0
+      ? auction.uniqueBidders
+      : chronologicalBids.reduce((ordered, bid) => {
+        const id = String(bid.bidderId);
+        if (!ordered.some((knownId) => String(knownId) === id)) ordered.push(bid.bidderId);
+        return ordered;
+      }, []);
+    const labelMap = new Map(
+      bidderOrder.map((id, i) => [String(id), `Bidder ${i + 1}`])
+    );
+
+    const publicBids = chronologicalBids.map((bid) => ({
+      _id: bid._id,
+      auctionId: bid.auctionId,
+      amount: bid.amount,
+      createdAt: bid.createdAt,
+      bidderLabel: labelMap.get(String(bid.bidderId)) ?? "Bidder ?",
+    })).reverse();
+
+    res.status(200).json({ message: "Bids fetched successfully.", bids: publicBids });
   } catch (error) {
     console.error("Error fetching bids:", error);
-    res.status(500).json({ message: "Failed to fetch bids.", error: error.message });
+    res.status(500).json({ message: "Failed to fetch bids." });
   }
 };
 
@@ -499,7 +625,7 @@ export const endAuction = async (req, res) => {
 
   } catch (error) {
     console.error("Error ending auction:", error);
-    res.status(500).json({ message: "Failed to end auction.", error: error.message });
+    res.status(500).json({ message: "Failed to end auction." });
   }
 };
 
@@ -510,6 +636,10 @@ export const cancelAuction = async (req, res) => {
 
     if (!sellerId) {
       return res.status(401).json({ message: "Unauthorized. Please log in." });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(auctionId)) {
+      return res.status(400).json({ message: "Invalid auction ID format." });
     }
 
     const auction = await auctionModel.findById(auctionId);
@@ -534,7 +664,7 @@ export const cancelAuction = async (req, res) => {
 
   } catch (error) {
     console.error("Error cancelling auction:", error);
-    res.status(500).json({ message: "Failed to cancel auction.", error: error.message });
+    res.status(500).json({ message: "Failed to cancel auction." });
   }
 };
 
@@ -569,14 +699,46 @@ export const updateAuction = async (req, res) => {
       return res.status(400).json({ message: "Auction start time must be at or after the review period ends." });
     }
 
-    const { startingPrice, ...updateData } = req.body;
-    const { auctionDuration, auctionDurationUnit, ...restOfUpdateData } = updateData; // Destructure to handle duration separately
+    const {
+      title,
+      description,
+      category,
+      startingPrice,
+      reviewEndsAt,
+      startAuctionAt,
+      auctionDuration,
+      auctionDurationUnit,
+      size,
+      sizeUnit,
+      weight,
+      weightUnit,
+      brand,
+      condition,
+      color,
+      material,
+      images,
+    } = req.body;
 
-    // Dynamically update fields from the request body
-    for (const key in updateData) {
-      if (Object.prototype.hasOwnProperty.call(updateData, key)) {
-        auction[key] = updateData[key];
-      }
+    // Only listing fields may be changed. Ownership, winner, cancellation,
+    // bid history, and payment/order state are never client-editable.
+    const editableFields = {
+      title,
+      description,
+      category,
+      reviewEndsAt,
+      startAuctionAt,
+      size,
+      sizeUnit,
+      weight,
+      weightUnit,
+      brand,
+      condition,
+      color,
+      material,
+      images,
+    };
+    for (const [key, value] of Object.entries(editableFields)) {
+      if (value !== undefined) auction[key] = value;
     }
 
     if (startingPrice !== undefined) {
@@ -598,7 +760,6 @@ export const updateAuction = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to update auction",
-      error: error.message,
     });
   }
 };
@@ -616,7 +777,6 @@ export const deleteAuction = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to delete auction",
-      error: error.message,
     });
   }
 };
@@ -649,7 +809,6 @@ export const getEnrolledAuctionsByUser = async (req, res) => {
     console.error("Error fetching enrolled auctions:", error);
     res.status(500).json({
       message: "Failed to fetch enrolled auctions.",
-      error: error.message,
     });
   }
 };
@@ -677,6 +836,31 @@ export const getWonAuctionsByUser = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching won auctions:", error);
-    res.status(500).json({ message: "Failed to fetch won auctions.", error: error.message });
+    res.status(500).json({ message: "Failed to fetch won auctions." });
+  }
+};
+
+export const processUnresolvedOrders = async () => {
+  const unresolvedAuctions = await auctionModel.find({
+    winnerId: { $exists: true, $ne: null },
+    orderCreatedAt: null
+  });
+
+  for (const auction of unresolvedAuctions) {
+    triggerAutoCreateOrder(auction, 1, 0); // Trigger a single retry immediately
+  }
+  return unresolvedAuctions.length;
+};
+
+export const retryUnresolvedOrderCreation = async (req, res) => {
+  try {
+    const count = await processUnresolvedOrders();
+    res.status(200).json({
+      message: `Triggered order creation retry for ${count} unresolved auctions.`,
+      count
+    });
+  } catch (error) {
+    console.error("Error retrying unresolved orders:", error);
+    res.status(500).json({ message: "Failed to retry unresolved orders." });
   }
 };

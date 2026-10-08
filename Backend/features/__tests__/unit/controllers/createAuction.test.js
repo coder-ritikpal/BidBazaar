@@ -164,7 +164,6 @@ describe("createAuction", () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         message: "Failed to create auction",
-        error: "Database Error",
       }),
     );
   });

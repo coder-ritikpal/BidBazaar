@@ -34,11 +34,31 @@ describe("endAuction & cancelAuction", () => {
     auctionDurationUnit: "days",
     bids: [],
     toObject: jest.fn().mockReturnThis(),
-    save: jest.fn().mockResolvedValue(this),
+    save: jest.fn().mockResolvedValue(true),
+    constructor: {
+      findOneAndUpdate: jest.fn().mockResolvedValue({
+        _id: auctionId,
+        winnerId: "winner123",
+        winningBidId: "winbid123",
+        currentPrice: 100
+      }),
+    },
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
+    baseAuction.constructor.findOneAndUpdate.mockResolvedValue({
+      _id: auctionId,
+      winnerId: "winner123",
+      winningBidId: "winbid123",
+      currentPrice: 100,
+    });
+    baseAuction.winnerId = undefined;
+    baseAuction.winningBidId = undefined;
+    baseAuction.endAuctionAt = undefined;
+    baseAuction.cancelledAt = undefined;
+    baseAuction.toObject.mockReturnThis();
+    baseAuction.save.mockResolvedValue(true);
     req = {
       params: { auctionId },
       user: { id: sellerId },

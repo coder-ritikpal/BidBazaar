@@ -14,11 +14,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      // Allow any origin for WebSockets to prevent CORS issues on Render
-      // or check if it roughly matches config.FRONTEND_URL
-      callback(null, true);
-    },
+    origin: config.FRONTEND_URL,
     credentials: true,
   },
 });
@@ -29,15 +25,19 @@ initializeSocket(io);
 app.set('io', io);
 
 if (process.env.NODE_ENV !== "test") {
-  connectDB();
-  connectRabbitMQ();
-  connectRedis();
-  // Start background cron jobs
-  startResolveAuctionsCron();
-}
+  (async () => {
+    try {
+      await connectDB();
+      await connectRabbitMQ();
+      connectRedis();
+      startResolveAuctionsCron();
 
-if (process.env.NODE_ENV !== "test") {
-  server.listen(PORT, () => {
-    console.log(`Features service with WebSockets is running on port ${PORT}`);
-  });
+      server.listen(PORT, () => {
+        console.log(`Features service with WebSockets is running on port ${PORT}`);
+      });
+    } catch (error) {
+      console.error("Failed to start features service:", error);
+      process.exit(1);
+    }
+  })();
 }

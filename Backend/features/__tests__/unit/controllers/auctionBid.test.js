@@ -3,8 +3,11 @@ import mongoose from "mongoose";
 
 const findByIdMock = jest.fn();
 const findOneAndUpdateMock = jest.fn();
-const bidCreateMock = jest.fn();
 const bidFindOneMock = jest.fn();
+const bidFindMock = jest.fn();
+const bidFindSortMock = jest.fn();
+const bidFindSelectMock = jest.fn();
+const bidFindLeanMock = jest.fn();
 
 jest.unstable_mockModule("../../../src/models/auction.model.js", () => ({
   default: {
@@ -13,12 +16,17 @@ jest.unstable_mockModule("../../../src/models/auction.model.js", () => ({
   },
 }));
 
-jest.unstable_mockModule("../../../src/models/bid.model.js", () => ({
-  default: {
-    create: bidCreateMock,
-    findOne: bidFindOneMock,
-  },
+const bidSaveMock = jest.fn();
+const bidModelMock = jest.fn().mockImplementation((bid) => ({
+  ...bid,
+  save: bidSaveMock,
 }));
+jest.unstable_mockModule("../../../src/models/bid.model.js", () => {
+  bidModelMock.findOne = bidFindOneMock;
+  bidModelMock.find = bidFindMock;
+  bidModelMock.findByIdAndDelete = jest.fn();
+  return { default: bidModelMock };
+});
 
 const { auctionBid } =
   await import("../../../src/controllers/auction.controller.js");
@@ -35,6 +43,13 @@ describe("auctionBid", () => {
   };
   beforeEach(() => {
     jest.clearAllMocks();
+    bidModelMock.mockImplementation((bid) => ({
+      ...bid,
+      save: bidSaveMock,
+    }));
+    bidFindMock.mockReturnValue({ sort: bidFindSortMock });
+    bidFindSortMock.mockReturnValue({ select: bidFindSelectMock });
+    bidFindSelectMock.mockReturnValue({ lean: bidFindLeanMock });
 
     mockIo.to.mockReturnValue({
       emit: mockEmit,
@@ -72,27 +87,31 @@ describe("auctionBid", () => {
     };
     findByIdMock.mockResolvedValue(auction);
     bidFindOneMock.mockResolvedValue(null);
+    bidSaveMock.mockResolvedValue(true);
     findOneAndUpdateMock.mockResolvedValue({
       ...auction,
       currentPrice: 1500,
+      uniqueBidders: [bidderId],
     });
-    bidCreateMock.mockResolvedValue({ _id: "bid123", bidderId, amount: 1500 });
-
     await auctionBid(req, res);
 
     expect(findByIdMock).toHaveBeenCalledWith(auctionId);
     expect(bidFindOneMock).toHaveBeenCalled();
-    expect(findOneAndUpdateMock).toHaveBeenCalledWith(
-      { _id: auctionId, currentPrice: { $lt: 1500 } },
-      { $set: { currentPrice: 1500 }, $push: { bids: expect.anything() } },
-      { new: true }
-    );
-    expect(bidCreateMock).toHaveBeenCalledWith({
-      _id: expect.anything(),
+    const [filter, updatePipeline, options] = findOneAndUpdateMock.mock.calls[0];
+    expect(filter).toEqual({ _id: auctionId, currentPrice: { $lt: 1500 } });
+    expect(Array.isArray(updatePipeline)).toBe(true);
+    expect(updatePipeline[0].$set.currentPrice).toEqual({ $literal: 1500 });
+    expect(updatePipeline[0].$set.bids.$concatArrays[1][0].$literal)
+      .toBeInstanceOf(mongoose.Types.ObjectId);
+    expect(updatePipeline[0].$set.uniqueBidders.$let.in.$cond[0].$in[0].$literal)
+      .toEqual(new mongoose.Types.ObjectId(bidderId));
+    expect(options).toEqual({ new: true });
+    expect(bidModelMock).toHaveBeenCalledWith(expect.objectContaining({
       auctionId,
       bidderId,
       amount: 1500,
-    });
+    }));
+    expect(bidSaveMock).toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(201);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({ message: "Bid placed successfully." })
@@ -111,12 +130,12 @@ describe("auctionBid", () => {
     };
     findByIdMock.mockResolvedValue(auction);
     bidFindOneMock.mockResolvedValue(null);
+    bidSaveMock.mockResolvedValue(true);
     findOneAndUpdateMock.mockResolvedValue({
       ...auction,
       currentPrice: 1500,
+      uniqueBidders: [bidderId],
     });
-    bidCreateMock.mockResolvedValue(newBid);
-
     await auctionBid(req, res);
 
     expect(req.app.get).toHaveBeenCalledWith("io");
@@ -125,8 +144,48 @@ describe("auctionBid", () => {
     expect(mockEmit).toHaveBeenCalledWith("new_bid", {
       auctionId,
       currentPrice: 1500,
-      bid: newBid,
+      bid: expect.objectContaining({ bidderLabel: "Bidder 1", amount: 1500 }),
     });
+  });
+
+  it("backfills bidder order for an existing auction before accepting a bid", async () => {
+    const previousBidderOne = new mongoose.Types.ObjectId();
+    const previousBidderTwo = new mongoose.Types.ObjectId();
+    const auction = {
+      ...liveAuction,
+      bids: [new mongoose.Types.ObjectId()],
+      uniqueBidders: [],
+    };
+    findByIdMock.mockResolvedValue(auction);
+    bidFindOneMock.mockResolvedValue(null);
+    bidFindLeanMock.mockResolvedValue([
+      { bidderId: previousBidderOne },
+      { bidderId: previousBidderTwo },
+      { bidderId: previousBidderOne },
+    ]);
+    bidSaveMock.mockResolvedValue(true);
+    findOneAndUpdateMock
+      .mockResolvedValueOnce({ uniqueBidders: [previousBidderOne, previousBidderTwo] })
+      .mockResolvedValueOnce({
+        ...auction,
+        currentPrice: 1500,
+        uniqueBidders: [previousBidderOne, previousBidderTwo, new mongoose.Types.ObjectId(bidderId)],
+      });
+
+    await auctionBid(req, res);
+
+    expect(bidFindMock).toHaveBeenCalledWith({ auctionId });
+    expect(bidFindSortMock).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
+    expect(findOneAndUpdateMock.mock.calls[0][0]).toEqual({
+      _id: auctionId,
+      $or: [
+        { uniqueBidders: { $exists: false } },
+        { uniqueBidders: { $size: 0 } },
+      ],
+    });
+    expect(mockEmit).toHaveBeenCalledWith("new_bid", expect.objectContaining({
+      bid: expect.objectContaining({ bidderLabel: "Bidder 3" }),
+    }));
   });
 
   it("should return 401 if user is not logged in", async () => {
@@ -198,7 +257,6 @@ describe("auctionBid", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       message: "Failed to place bid.",
-      error: "DB Error",
     });
   });
 });

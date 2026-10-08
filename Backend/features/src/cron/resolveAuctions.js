@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import auctionModel from '../models/auction.model.js';
-import { getAuctionStatus, processAuctionTransitions } from '../controllers/auction.controller.js';
+import { getAuctionStatus, processAuctionTransitions, processUnresolvedOrders } from '../controllers/auction.controller.js';
 
 const startResolveAuctionsCron = () => {
   // Run every 5 minutes
@@ -20,7 +20,7 @@ const startResolveAuctionsCron = () => {
         // processAuctionTransitions determines if the auction is live or ended,
         // publishes relevant events, assigns winners, and sets deleteAt.
         await processAuctionTransitions(auction);
-        
+
         const currentStatus = getAuctionStatus(auction);
         if (currentStatus === 'ended') {
           resolvedCount++;
@@ -32,6 +32,13 @@ const startResolveAuctionsCron = () => {
       } else {
         console.log('[CRON] No newly ended auctions to resolve at this time.');
       }
+
+      // Also retry unresolved order creations
+      const retriedCount = await processUnresolvedOrders();
+      if (retriedCount > 0) {
+        console.log(`[CRON] Triggered order creation retry for ${retriedCount} unresolved auctions.`);
+      }
+
     } catch (error) {
       console.error('[CRON] Error resolving auctions:', error);
     }
@@ -39,4 +46,3 @@ const startResolveAuctionsCron = () => {
 };
 
 export default startResolveAuctionsCron;
-

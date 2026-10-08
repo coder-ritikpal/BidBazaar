@@ -53,6 +53,6 @@ describe("deleteAuction", () => {
     await deleteAuction(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "Failed to delete auction", error: "DB Error" });
+    expect(res.json).toHaveBeenCalledWith({ message: "Failed to delete auction" });
   });
 });

@@ -17,7 +17,7 @@ const _config = {
   REDIS_URL: process.env.REDIS_URL,
 };
 
-if (!_config.INTERNAL_AUTH_TOKEN_SECRET) {
+if (process.env.NODE_ENV !== 'test' && !_config.INTERNAL_AUTH_TOKEN_SECRET) {
   console.error("CRITICAL ERROR: INTERNAL_AUTH_TOKEN_SECRET environment variable is missing.");
   process.exit(1);
 }

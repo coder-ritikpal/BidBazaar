@@ -26,6 +26,7 @@ jest.unstable_mockModule("../../../src/services/cart.service.js", () => ({
 jest.unstable_mockModule("../../../src/cache/redis.js", () => ({
   getCache: jest.fn().mockResolvedValue(null),
   setCache: jest.fn().mockResolvedValue(true),
+  setNxCache: jest.fn().mockResolvedValue(true),
   clearCache: jest.fn().mockResolvedValue(true),
 }));
 
@@ -152,7 +153,6 @@ describe("getAuctions", () => {
 
     expect(res.json).toHaveBeenCalledWith({
       message: "Failed to fetch auctions",
-      error: "Database Error",
     });
   });
 

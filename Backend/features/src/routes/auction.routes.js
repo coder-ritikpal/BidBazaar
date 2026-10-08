@@ -11,6 +11,7 @@ import {
   cancelAuction,
   getEnrolledAuctionsByUser,
   getWonAuctionsByUser,
+  retryUnresolvedOrderCreation,
 } from "../controllers/auction.controller.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { internalAuthMiddleware } from "../middlewares/internalAuth.middleware.js";
@@ -21,6 +22,7 @@ router.post("/", internalAuthMiddleware, createAuction);
 router.get("/", getAuctions);
 router.get("/enrolled/by-user", authMiddleware, getEnrolledAuctionsByUser);
 router.get("/won/by-user", authMiddleware, getWonAuctionsByUser);
+router.post("/internal/orders/retry-unresolved", internalAuthMiddleware, retryUnresolvedOrderCreation);
 
 // Bidding and management routes
 // These should come before the generic /:auctionId route to ensure correct matching

@@ -118,6 +118,7 @@ describe("getAuctionById", () => {
           _id: this._id,
           title: this.title,
           currentPrice: this.currentPrice,
+          uniqueBidders: ["private-bidder-id"],
         };
       },
       save: jest.fn(),
@@ -133,12 +134,9 @@ describe("getAuctionById", () => {
     expect(findByIdMock).toHaveBeenCalledWith(req.params.auctionId);
 
     expect(res.status).toHaveBeenCalledWith(200);
-
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        message: "Auction fetched successfully",
-      }),
-    );
+    const response = res.json.mock.calls[0][0];
+    expect(response.message).toBe("Auction fetched successfully");
+    expect(response.auction).not.toHaveProperty("uniqueBidders");
   });
 
   it("should set winner and deleteAt for an ended auction", async () => {
@@ -179,10 +177,7 @@ describe("getAuctionById", () => {
     await getAuctionById(req, res);
 
     expect(findByIdMock).toHaveBeenCalledWith(req.params.auctionId);
-    expect(bidFindOneMock).toHaveBeenCalledWith({ auctionId: endedAuction._id });
-    expect(endedAuction.save).toHaveBeenCalled();
-    expect(endedAuction.winnerId).toBe("winner123");
-    expect(endedAuction.deleteAt).toBeInstanceOf(Date);
+    expect(endedAuction.save).not.toHaveBeenCalled();
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -221,7 +216,6 @@ describe("getAuctionById", () => {
 
     expect(res.json).toHaveBeenCalledWith({
       message: "Failed to fetch auction due to a server error.",
-      error: "Unexpected database failure",
     });
   });
 });

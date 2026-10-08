@@ -3,10 +3,19 @@ import mongoose from "mongoose";
 
 const findMock = jest.fn();
 const sortMock = jest.fn();
+const findByIdMock = jest.fn();
+const selectMock = jest.fn();
+const leanMock = jest.fn();
 
 jest.unstable_mockModule("../../../src/models/bid.model.js", () => ({
   default: {
     find: findMock,
+  },
+}));
+
+jest.unstable_mockModule("../../../src/models/auction.model.js", () => ({
+  default: {
+    findById: findByIdMock,
   },
 }));
 
@@ -28,21 +37,48 @@ describe("getBidsForAuction", () => {
       json: jest.fn(),
     };
     findMock.mockReturnValue({ sort: sortMock });
+    findByIdMock.mockReturnValue({ select: selectMock });
+    selectMock.mockReturnValue({ lean: leanMock });
   });
 
   it("should fetch bids for an auction successfully", async () => {
-    const bids = [{ amount: 100 }, { amount: 200 }];
+    const bids = [{ _id: '1', amount: 100, bidderId: 'bidder1' }, { _id: '2', amount: 200, bidderId: 'bidder2' }];
     sortMock.mockResolvedValue(bids);
+    leanMock.mockResolvedValue({ uniqueBidders: ['bidder2', 'bidder1'] }); // simulate labels
 
     await getBidsForAuction(req, res);
 
     expect(findMock).toHaveBeenCalledWith({ auctionId });
-    expect(sortMock).toHaveBeenCalledWith({ createdAt: -1 });
+    expect(sortMock).toHaveBeenCalledWith({ createdAt: 1, _id: 1 });
     expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.json).toHaveBeenCalledWith({
-      message: "Bids fetched successfully.",
-      bids,
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Bids fetched successfully.",
+        bids: [
+          expect.objectContaining({ _id: '2', bidderLabel: 'Bidder 1' }),
+          expect.objectContaining({ _id: '1', bidderLabel: 'Bidder 2' }),
+        ],
+      })
+    );
+  });
+
+  it("assigns labels from chronological history for legacy auctions", async () => {
+    sortMock.mockResolvedValue([
+      { _id: '1', amount: 100, bidderId: 'bidder1' },
+      { _id: '2', amount: 200, bidderId: 'bidder2' },
+      { _id: '3', amount: 300, bidderId: 'bidder1' },
+    ]);
+    leanMock.mockResolvedValue({ uniqueBidders: [] });
+
+    await getBidsForAuction(req, res);
+
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+      bids: [
+        expect.objectContaining({ _id: '3', bidderLabel: 'Bidder 1' }),
+        expect.objectContaining({ _id: '2', bidderLabel: 'Bidder 2' }),
+        expect.objectContaining({ _id: '1', bidderLabel: 'Bidder 1' }),
+      ],
+    }));
   });
 
   it("should return 400 for an invalid auction ID", async () => {
@@ -65,7 +101,6 @@ describe("getBidsForAuction", () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json).toHaveBeenCalledWith({
       message: "Failed to fetch bids.",
-      error: "Database error",
     });
   });
 });

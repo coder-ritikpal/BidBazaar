@@ -110,7 +110,6 @@ describe("updateAuction", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       message: "Failed to update auction",
-      error: "DB save failed",
     });
   });
 });
