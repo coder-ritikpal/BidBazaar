@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import helmet from "helmet";
 import productRoutes from "./routes/product.routes.js";
 import config from "./config/config.js";
 
@@ -15,6 +16,8 @@ try {
 
 
 const app = express();
+
+app.use(helmet());
 
 app.use(
   cors({

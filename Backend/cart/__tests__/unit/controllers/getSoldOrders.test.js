@@ -109,7 +109,6 @@ describe('getSoldOrders Controller', () => {
 
     expect(res.json).toHaveBeenCalledWith({
       message: 'Failed to fetch sold orders.',
-      error: 'Database Error',
     });
   });
 });

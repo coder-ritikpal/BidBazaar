@@ -95,7 +95,7 @@ describe("Product Integration Flow", () => {
       .field("auctionDuration", 7)
       .field("auctionDurationUnit", "days")
       .field("startOption", "now")
-      .attach("images", Buffer.from("fake"), "camera.jpg");
+      .attach("images", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "camera.jpg");
 
     expect(createRes.status).toBe(201);
     expect(createRes.body.message).toBe("Product created successfully");

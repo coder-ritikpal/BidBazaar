@@ -91,7 +91,6 @@ export const getProducts = async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch products",
-      error: error.message,
     });
   }
 };
@@ -127,7 +126,6 @@ export const getSellerProducts = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: "Failed to fetch seller products",
-      error: error.message,
     });
   }
 };
@@ -161,7 +159,6 @@ export const getProductById = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to fetch product",
-      error: error.message,
     });
   }
 };
@@ -227,7 +224,7 @@ export const createProduct = async (req, res) => {
       await product.deleteOne();
       return res.status(502).json({
         message: "Product review started, but auction creation failed",
-        error: auctionError.message,
+        error: "Could not create the auction for this product.",
       });
     }
 
@@ -244,7 +241,6 @@ export const createProduct = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to create product",
-      error: error.message,
     });
   }
 };
@@ -376,7 +372,7 @@ export const updateProduct = async (req, res) => {
     } catch (auctionError) {
       return res.status(502).json({
         message: "Product updated, but failed to sync with auction service.",
-        error: auctionError.message,
+        error: "Could not update the auction for this product.",
       });
     }
 
@@ -387,7 +383,6 @@ export const updateProduct = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to update product",
-      error: error.message,
     });
   }
 };
@@ -436,7 +431,6 @@ export const deleteProduct = async (req, res) => {
   } catch (error) {
     res.status(400).json({
       message: "Failed to delete product",
-      error: error.message,
     });
   }
 };

@@ -81,7 +81,7 @@ describe("POST /api/products", () => {
       .field("auctionDuration", payload.auctionDuration)
       .field("auctionDurationUnit", payload.auctionDurationUnit)
       .field("startOption", "now")
-      .attach("images", Buffer.from("fake-image"), "camera.jpg");
+      .attach("images", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "camera.jpg");
 
     expect(response.status).toBe(201);
     expect(response.body.message).toBe("Product created successfully");
