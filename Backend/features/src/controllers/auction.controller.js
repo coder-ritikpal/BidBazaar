@@ -118,44 +118,73 @@ export const processAuctionTransitions = async (auction) => {
   }
 
   if (currentStatus === "ended" && !auction.cancelledAt) {
-    if (!auction.deleteAt) {
-      auction.deleteAt = new Date(endAuctionAtTime + 48 * 60 * 60 * 1000); // Hide after 48 hours
-      shouldSave = true;
-    }
-
+    let winnerResolutionPending = false;
     if (!auction.winnerId) {
-      const winningBid = await bidModel.findOne({ auctionId: auction._id }).sort({ createdAt: -1 });
+      // Resolve against current persisted state, since a bid may have committed
+      // after the auction document passed to this function was loaded.
+      const latestAuction = await auction.constructor.findById(auction._id)
+        .select("winnerId winningBidId currentPrice bids")
+        .lean();
 
-      if (winningBid) {
-        const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
-          { _id: auction._id, winnerId: { $exists: false } },
-          {
-            $set: {
-              winnerId: winningBid.bidderId,
-              winningBidId: winningBid._id
-            }
-          },
-          { new: true }
-        );
+      if (latestAuction?.winnerId) {
+        auction.winnerId = latestAuction.winnerId;
+        auction.winningBidId = latestAuction.winningBidId;
+        auction.currentPrice = latestAuction.currentPrice;
+      } else if (latestAuction?.bids?.length) {
+        winnerResolutionPending = true;
+        // Only bids linked from the auction are accepted bids. Matching the
+        // amount alone could select an orphan left by a failed concurrent bid.
+        const acceptedBidIds = latestAuction.bids;
+        const winningBid = await bidModel.findOne({
+          _id: { $in: acceptedBidIds },
+          auctionId: auction._id,
+          amount: latestAuction.currentPrice,
+        }).sort({ createdAt: -1 });
 
-        if (atomicallyUpdatedAuction) {
-          auction.winnerId = atomicallyUpdatedAuction.winnerId;
-          auction.winningBidId = atomicallyUpdatedAuction.winningBidId;
+        if (winningBid) {
+          const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
+            {
+              _id: auction._id,
+              winnerId: { $exists: false },
+              currentPrice: latestAuction.currentPrice,
+              bids: winningBid._id,
+            },
+            {
+              $set: {
+                winnerId: winningBid.bidderId,
+                winningBidId: winningBid._id
+              }
+            },
+            { new: true }
+          );
 
-          triggerAutoCreateOrder(atomicallyUpdatedAuction);
+          if (atomicallyUpdatedAuction) {
+            auction.winnerId = atomicallyUpdatedAuction.winnerId;
+            auction.winningBidId = atomicallyUpdatedAuction.winningBidId;
+            winnerResolutionPending = false;
 
-          import('../broker/rabbit.js').then(({ publishToQueue }) => {
-            publishToQueue('auction_won', {
-              auctionId: atomicallyUpdatedAuction._id.toString(),
-              winnerId: atomicallyUpdatedAuction.winnerId.toString(),
-              price: atomicallyUpdatedAuction.currentPrice
-            });
-          }).catch(err => console.error("Could not import publishToQueue", err));
+            triggerAutoCreateOrder(atomicallyUpdatedAuction);
+
+            import('../broker/rabbit.js').then(({ publishToQueue }) => {
+              publishToQueue('auction_won', {
+                auctionId: atomicallyUpdatedAuction._id.toString(),
+                winnerId: atomicallyUpdatedAuction.winnerId.toString(),
+                price: atomicallyUpdatedAuction.currentPrice
+              });
+            }).catch(err => console.error("Could not import publishToQueue", err));
+          }
         }
       }
     }
 
-    if (!auction.isEndedEventPublished) {
+    // Keep unresolved auctions eligible for the next cron pass. Once the
+    // winner is stable (or there were no bids), start the 48-hour hide window.
+    if (!winnerResolutionPending && !auction.deleteAt) {
+      auction.deleteAt = new Date(endAuctionAtTime + 48 * 60 * 60 * 1000);
+      shouldSave = true;
+    }
+
+    if (!winnerResolutionPending && !auction.isEndedEventPublished) {
       auction.isEndedEventPublished = true;
       shouldSave = true;
       import('../broker/rabbit.js').then(({ publishToQueue }) => {
@@ -451,11 +480,45 @@ export const auctionBid = async (req, res) => {
     // 2. Atomically update the auction ONLY IF currentPrice is still less than amount.
     //    Append a bidder only once. $concatArrays makes the numbering order explicit;
     //    $addToSet does not guarantee array order.
+    //    Also verify the auction is still active at the time of the update.
     const bidderObjectId = new mongoose.Types.ObjectId(bidderId);
+    const effectiveEndTime = {
+      $ifNull: [
+        "$endAuctionAt",
+        {
+          $add: [
+            "$startAuctionAt",
+            {
+              $switch: {
+                branches: [
+                  {
+                    case: { $eq: ["$auctionDurationUnit", "minutes"] },
+                    then: { $multiply: ["$auctionDuration", 60 * 1000] },
+                  },
+                  {
+                    case: { $eq: ["$auctionDurationUnit", "hours"] },
+                    then: { $multiply: ["$auctionDuration", 60 * 60 * 1000] },
+                  },
+                ],
+                default: { $multiply: ["$auctionDuration", 24 * 60 * 60 * 1000] },
+              },
+            },
+          ],
+        },
+      ],
+    };
     const updatedAuction = await auctionModel.findOneAndUpdate(
       {
         _id: auctionId,
-        currentPrice: { $lt: amount }
+        currentPrice: { $lt: amount },
+        winnerId: { $exists: false },
+        cancelledAt: null,
+        $expr: {
+          $and: [
+            { $lte: ["$startAuctionAt", "$$NOW"] },
+            { $gt: [effectiveEndTime, "$$NOW"] },
+          ],
+        },
       },
       [{
         $set: {
@@ -609,19 +672,20 @@ export const endAuction = async (req, res) => {
     }
 
     const auctionStatus = getAuctionStatus(auction);
-    if (auctionStatus === 'ended' || auctionStatus === 'cancelled') {
-      return res.status(400).json({ message: `Auction has already ${auctionStatus}.` });
+    if (auctionStatus !== 'ended') {
+      return res.status(400).json({
+        message: auctionStatus === 'cancelled'
+          ? "A cancelled auction cannot be ended."
+          : "An auction cannot be ended before its scheduled end time.",
+      });
     }
 
-    // Manually end the auction by setting its end time to now
-    auction.endAuctionAt = new Date();
-    await auction.save();
-
-    // Immediately process state transitions (winner assignment, event publishing, order creation)
+    // This endpoint can finalize a naturally ended auction if the cron has not
+    // processed it yet. It never shortens an auction's scheduled duration.
     await processAuctionTransitions(auction);
 
     const responseAuction = await toAuctionResponse(auction);
-    res.status(200).json({ message: "Auction ended successfully and winner declared.", auction: responseAuction });
+    res.status(200).json({ message: "Auction finalized successfully.", auction: responseAuction });
 
   } catch (error) {
     console.error("Error ending auction:", error);
