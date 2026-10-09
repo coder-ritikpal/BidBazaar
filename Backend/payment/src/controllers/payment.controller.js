@@ -37,6 +37,12 @@ const fetchOrderFromCartService = async (orderId, authHeader) => {
   return data.order;
 };
 
+const toRazorpayOrderResponse = (payment) => ({
+  id: payment.razorpayOrderId,
+  amount: payment.amount,
+  currency: "INR",
+});
+
 export const createOrder = async (req, res) => {
   const { orderId } = req.body;
   const userId = req.user?.id;
@@ -62,6 +68,22 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ message: 'Invalid order amount.' });
     }
 
+    // Reuse the existing provider order on retries. Replacing this mapping
+    // while an older checkout is still valid can make a captured payment
+    // impossible to match during verification.
+    const existingPayment = await Payment.findOne({ orderId });
+    if (existingPayment) {
+      if (existingPayment.userId !== userId) {
+        return res.status(403).json({ message: "You are not authorized to pay for this order." });
+      }
+      if (existingPayment.status === 'captured') {
+        return res.status(409).json({ message: "Payment was already captured. Refresh your orders." });
+      }
+      if (existingPayment.status === 'created') {
+        return res.status(200).json(toRazorpayOrderResponse(existingPayment));
+      }
+    }
+
     // Calculate Buyer's Protection Fee: 5% + 100 INR
     const protectionFee = (baseAmount * 0.05) + 100;
     const totalAmount = baseAmount + protectionFee;
@@ -81,18 +103,28 @@ export const createOrder = async (req, res) => {
 
     const razorpayOrder = await razorpayInstance.orders.create(options);
 
-    await Payment.findOneAndUpdate(
-      { orderId },
-      { 
+    try {
+      const payment = await Payment.create({
+        orderId,
         userId,
         razorpayOrderId: razorpayOrder.id,
         amount: options.amount,
         status: 'created'
-      },
-      { upsert: true, new: true }
-    );
+      });
+      return res.status(200).json(toRazorpayOrderResponse(payment));
+    } catch (error) {
+      // Concurrent create-order requests race on the unique orderId index.
+      // Return the winning attempt's mapping instead of overwriting it.
+      if (error?.code !== 11000) throw error;
 
-    res.status(200).json(razorpayOrder);
+      const payment = await Payment.findOne({ orderId });
+      if (!payment || payment.userId !== userId) throw error;
+      if (payment.status === 'captured') {
+        return res.status(409).json({ message: "Payment was already captured. Refresh your orders." });
+      }
+      return res.status(200).json(toRazorpayOrderResponse(payment));
+    }
+
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
     res.status(error.message === 'Order not found.' ? 404 : 500).json({
