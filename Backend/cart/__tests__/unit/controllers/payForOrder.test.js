@@ -4,6 +4,7 @@ import { jest, describe, beforeEach, it, expect } from "@jest/globals";
 
 const mockOrderModel = {
   findById: jest.fn(),
+  findOneAndUpdate: jest.fn(),
 };
 
 jest.unstable_mockModule("../../../src/models/order.model.js", () => ({
@@ -27,6 +28,7 @@ describe("payForOrder Controller", () => {
       params: {},
       user: {
         id: "mockUserId",
+        service: "payment-service",
       },
     };
 
@@ -51,14 +53,20 @@ describe("payForOrder Controller", () => {
     req.params.orderId = mockOrderId;
 
     mockOrderModel.findById.mockResolvedValue(mockOrder);
+    mockOrderModel.findOneAndUpdate.mockResolvedValue({ ...mockOrder, status: "paid" });
 
     await payForOrder(req, res, next);
 
     expect(mockOrderModel.findById).toHaveBeenCalledWith(mockOrderId);
-
-    expect(mockOrder.status).toBe("paid");
-
-    expect(mockOrder.save).toHaveBeenCalled();
+    expect(mockOrderModel.findOneAndUpdate).toHaveBeenCalledWith(
+      {
+        _id: mockOrderId,
+        winnerId: "mockUserId",
+        status: { $in: ['pending_payment', 'cancelled_unpaid'] },
+      },
+      { $set: { status: 'paid' } },
+      { new: true }
+    );
 
     expect(res.status).toHaveBeenCalledWith(200);
 
@@ -108,7 +116,7 @@ describe("payForOrder Controller", () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      message: "This order is not awaiting payment. Current status: shipped.",
+      message: "This order cannot be paid. Current status: shipped.",
     });
   });
 

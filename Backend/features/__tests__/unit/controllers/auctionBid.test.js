@@ -98,7 +98,13 @@ describe("auctionBid", () => {
     expect(findByIdMock).toHaveBeenCalledWith(auctionId);
     expect(bidFindOneMock).toHaveBeenCalled();
     const [filter, updatePipeline, options] = findOneAndUpdateMock.mock.calls[0];
-    expect(filter).toEqual({ _id: auctionId, currentPrice: { $lt: 1500 } });
+    expect(filter).toEqual({
+      _id: auctionId,
+      currentPrice: { $lt: 1500 },
+      winnerId: { $exists: false },
+      cancelledAt: null,
+      $expr: expect.any(Object)
+    });
     expect(Array.isArray(updatePipeline)).toBe(true);
     expect(updatePipeline[0].$set.currentPrice).toEqual({ $literal: 1500 });
     expect(updatePipeline[0].$set.bids.$concatArrays[1][0].$literal)

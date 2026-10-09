@@ -1,3 +1,4 @@
+process.env.INTERNAL_AUTH_TOKEN_SECRET = 'test_internal_secret';
 import { jest } from "@jest/globals";
 
 const updateAuctionForProduct = jest.fn();

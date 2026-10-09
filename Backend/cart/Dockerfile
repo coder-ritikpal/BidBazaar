@@ -19,6 +19,6 @@ COPY package*.json ./
 COPY src ./src
 COPY server.js .
 
-EXPOSE 3001
+EXPOSE 3003
 
 CMD ["node", "server.js"]

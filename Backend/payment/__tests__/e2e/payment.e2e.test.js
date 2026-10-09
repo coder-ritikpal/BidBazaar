@@ -6,6 +6,7 @@ import Payment from '../../src/models/payment.model.js';
 
 process.env.JWT_SECRET = 'test_jwt_secret';
 process.env.RAZORPAY_KEY_SECRET = 'test_razorpay_secret';
+process.env.INTERNAL_AUTH_TOKEN_SECRET = 'test_internal_secret';
 
 import { MockAgent, setGlobalDispatcher } from 'undici';
 
@@ -92,7 +93,7 @@ describe('Payment API E2E', () => {
       razorpayOrders.create.mockResolvedValueOnce({ id: 'pay_order_1', amount: 20500 });
       const res = await request(app).post('/api/payments/create-order').set('Authorization', `Bearer ${token}`).send({ orderId: 'o1' });
       expect(res.status).toBe(200);
-      expect(res.body).toEqual({ id: 'pay_order_1', amount: 20500 });
+      expect(res.body).toEqual({ id: 'pay_order_1', amount: 20500, currency: 'INR' });
       expect(razorpayOrders.create).toHaveBeenCalledWith(expect.objectContaining({ amount: 20500, receipt: 'receipt_order_o1' }));
     });
 

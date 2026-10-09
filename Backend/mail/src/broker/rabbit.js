@@ -4,6 +4,8 @@ import config from '../config/config.js';
 const SERVICE = 'Mail Service';
 const RECONNECT_DELAY_MS = 5000;
 const MAX_PENDING_MESSAGES = 1000;
+const MAX_DELIVERY_RETRIES = 3;
+const RETRY_DELAY_MS = 5000;
 
 let connection = null;
 let channel = null;
@@ -26,6 +28,15 @@ const scheduleReconnect = () => {
 const consumeSubscription = async (queueName, callback) => {
   if (!channel || activeConsumers.has(queueName)) return;
   await channel.assertQueue(queueName, { durable: true });
+  await channel.assertQueue(`${queueName}.retry`, {
+    durable: true,
+    arguments: {
+      'x-message-ttl': RETRY_DELAY_MS,
+      'x-dead-letter-exchange': '',
+      'x-dead-letter-routing-key': queueName,
+    },
+  });
+  await channel.assertQueue(`${queueName}.dead`, { durable: true });
   const activeChannel = channel;
   const { consumerTag } = await activeChannel.consume(queueName, async (message) => {
     if (!message) return;
@@ -34,7 +45,27 @@ const consumeSubscription = async (queueName, callback) => {
       activeChannel.ack(message);
     } catch (error) {
       console.error(`[${SERVICE}] Failed to process message from ${queueName}.`, error);
-      activeChannel.nack(message, false, false);
+      const retryCount = Number(message.properties.headers?.['x-bidbazaar-retry-count'] || 0);
+      const isRetryable = retryCount < MAX_DELIVERY_RETRIES;
+      const destination = isRetryable ? `${queueName}.retry` : `${queueName}.dead`;
+
+      try {
+        activeChannel.sendToQueue(destination, message.content, {
+          persistent: true,
+          headers: {
+            ...message.properties.headers,
+            'x-bidbazaar-retry-count': retryCount + 1,
+          },
+        });
+        await activeChannel.waitForConfirms();
+        activeChannel.ack(message);
+        if (!isRetryable) {
+          console.error(`[${SERVICE}] Moved message from ${queueName} to its dead-letter queue after ${retryCount} retries.`);
+        }
+      } catch (publishError) {
+        console.error(`[${SERVICE}] Could not retain failed message from ${queueName}; requeueing it.`, publishError);
+        activeChannel.nack(message, false, true);
+      }
     }
   });
   if (channel === activeChannel) activeConsumers.set(queueName, consumerTag);

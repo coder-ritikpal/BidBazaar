@@ -98,6 +98,7 @@ describe('createOrder Controller', () => {
       winnerId: mockAuction.winnerId,
       amount: mockAuction.currentPrice,
       status: 'pending_payment',
+      paymentExpiresAt: expect.any(Date),
       itemDetails: {
         title: mockAuction.title,
         image: mockAuction.images[0].url,
