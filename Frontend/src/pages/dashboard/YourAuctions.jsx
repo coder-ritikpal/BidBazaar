@@ -188,7 +188,7 @@ const YourAuctions = () => {
                     {wonAuctions.map((auction) => {
                       const orderForAuction = myOrders.find(order => order.auctionId === auction._id);
                       const isInCart = orderForAuction && orderForAuction.status === 'pending_payment';
-                      const isPaid = orderForAuction && orderForAuction.status !== 'pending_payment';
+                      const isPaid = orderForAuction && orderForAuction.status !== 'pending_payment' && orderForAuction.status !== 'cancelled_unpaid';
 
                       return (
                         <div key={auction._id} className={styles.card}>
