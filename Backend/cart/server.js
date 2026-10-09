@@ -2,8 +2,9 @@ import app from './src/app.js';
 import connectDB from './src/db/db.js';
 import { connectProducer } from './src/broker/publisher.js';
 import startExpireOrdersCron from './src/cron/expireOrders.js';
+import config from './src/config/config.js';
 
-const PORT = process.env.PORT || 3003;
+const PORT = config.PORT;
 
 if (process.env.NODE_ENV !== 'test') {
   (async () => {

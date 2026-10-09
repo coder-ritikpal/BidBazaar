@@ -3,7 +3,7 @@ import { config as dotenvConfig } from 'dotenv';
 dotenvConfig();
 
 const _config = {
-  PORT: process.env.CART_SERVICE_PORT || 3003,
+  PORT: process.env.PORT || process.env.CART_SERVICE_PORT || 3003,
   MONGODB_URI: process.env.MONGODB_URI || process.env.DB_URI,
   JWT_SECRET: process.env.JWT_SECRET || (process.env.NODE_ENV === 'test' ? 'test-jwt-secret' : undefined),
   RABBITMQ_URL: process.env.RABBITMQ_URL,

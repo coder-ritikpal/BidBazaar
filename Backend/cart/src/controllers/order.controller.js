@@ -141,10 +141,32 @@ export const createOrder = async (req, res) => {
 
   try {
     // Idempotency check: if an order for this auction already exists, return it.
+    // If it was cancelled due to non-payment, allow creating a new one (or returning it as pending_payment again).
     const existingOrder = await orderModel.findOne({ auctionId });
     if (existingOrder) {
       if (String(existingOrder.winnerId) !== userId) {
         return res.status(403).json({ message: "You are not authorized to access this order." });
+      }
+      if (existingOrder.status === 'cancelled_unpaid') {
+        const recoveredOrder = await orderModel.findOneAndUpdate(
+          {
+            _id: existingOrder._id,
+            winnerId: userId,
+            status: 'cancelled_unpaid',
+          },
+          {
+            $set: {
+              status: 'pending_payment',
+              paymentExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            },
+          },
+          { new: true },
+        );
+        const latestOrder = recoveredOrder || await orderModel.findById(existingOrder._id);
+        return res.status(200).json({
+          message: recoveredOrder ? "Order recovered to cart." : "Item is already in your cart or ordered.",
+          order: latestOrder,
+        });
       }
       return res.status(200).json({ message: "Item is already in your cart or ordered.", order: existingOrder });
     }
@@ -168,6 +190,7 @@ export const createOrder = async (req, res) => {
       winnerId: auction.winnerId,
       amount: auction.currentPrice,
       status: 'pending_payment', // Item is in cart, awaiting payment
+      paymentExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       itemDetails: {
         title: auction.title || 'Untitled Item',
         image: auction.images?.[0]?.url || null,
@@ -217,6 +240,7 @@ export const autoCreateOrder = async (req, res) => {
       winnerId: auction.winnerId,
       amount: auction.currentPrice,
       status: 'pending_payment',
+      paymentExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       itemDetails: {
         title: auction.title || 'Untitled Item',
         image: auction.images?.[0]?.url || null,
@@ -236,9 +260,13 @@ export const autoCreateOrder = async (req, res) => {
 export const payForOrder = async (req, res) => {
   const { orderId } = req.params;
   const userId = req.user?.id;
+  const service = req.user?.service;
 
   if (!userId) {
     return res.status(401).json({ message: "Unauthorized. Please log in." });
+  }
+  if (!['payment-service', 'payment-service-webhook'].includes(service)) {
+    return res.status(403).json({ message: "Only the payment service can confirm payment." });
   }
 
   try {
@@ -253,25 +281,45 @@ export const payForOrder = async (req, res) => {
     if (order.status === 'paid') {
       return res.status(200).json({ message: "Order is already paid.", order });
     }
-    if (order.status !== 'pending_payment') {
-      return res.status(400).json({ message: `This order is not awaiting payment. Current status: ${order.status.replace('_', ' ')}.` });
+    if (!['pending_payment', 'cancelled_unpaid'].includes(order.status)) {
+      return res.status(400).json({ message: `This order cannot be paid. Current status: ${order.status.replace('_', ' ')}.` });
     }
 
-    order.status = 'paid';
-    await order.save();
+    // Atomically claim the transition. This also safely recovers an order that
+    // expired while a verified payment was being completed, and prevents a
+    // concurrent expiry/recovery write from reverting a paid order.
+    const paidOrder = await orderModel.findOneAndUpdate(
+      {
+        _id: orderId,
+        winnerId: userId,
+        status: { $in: ['pending_payment', 'cancelled_unpaid'] },
+      },
+      { $set: { status: 'paid' } },
+      { new: true },
+    );
+
+    if (!paidOrder) {
+      const latestOrder = await orderModel.findById(orderId);
+      if (latestOrder?.status === 'paid') {
+        return res.status(200).json({ message: "Order is already paid.", order: latestOrder });
+      }
+      return res.status(400).json({
+        message: `This order cannot be paid. Current status: ${latestOrder?.status || 'unavailable'}.`,
+      });
+    }
 
     // Notify Mail service
     try {
       await publishToQueue('order_placed', {
-        orderId: order._id.toString(),
+        orderId: paidOrder._id.toString(),
         userId: userId,
-        amount: order.amount
+        amount: paidOrder.amount
       });
     } catch (pubErr) {
       console.error("[Cart Service] Failed to publish order_placed event:", pubErr);
     }
 
-    res.status(200).json({ message: "Payment successful! Your order is being processed.", order });
+    res.status(200).json({ message: "Payment successful! Your order is being processed.", order: paidOrder });
   } catch (error) {
     console.error("Error processing payment:", error);
     res.status(500).json({ message: "Failed to process payment." });

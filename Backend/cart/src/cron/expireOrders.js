@@ -7,11 +7,17 @@ const startExpireOrdersCron = () => {
     console.log('[CRON] Running expireOrders job...');
     try {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const now = new Date();
       
       const result = await orderModel.updateMany(
         {
           status: 'pending_payment',
-          createdAt: { $lt: twentyFourHoursAgo }
+          $or: [
+            { paymentExpiresAt: { $lte: now } },
+            // Backward compatibility for orders created before paymentExpiresAt
+            // was introduced.
+            { paymentExpiresAt: null, createdAt: { $lt: twentyFourHoursAgo } },
+          ],
         },
         {
           $set: { status: 'cancelled_unpaid' }

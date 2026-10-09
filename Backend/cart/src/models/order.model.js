@@ -6,6 +6,9 @@ const orderSchema = new mongoose.Schema({
   sellerId: { type: mongoose.Schema.Types.ObjectId, required: true },
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
   amount: { type: Number, required: true },
+  // Explicit payment deadline so an expired order can be recovered without
+  // mutating Mongoose's immutable createdAt timestamp.
+  paymentExpiresAt: { type: Date, index: true },
   status: {
     type: String,
     enum: ['pending_payment', 'paid', 'shipped', 'delivered', 'cancelled', 'cancelled_unpaid'],
