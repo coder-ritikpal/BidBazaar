@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { getAuthPageClasses } from '@/styles/auth/authPageStyles'; // Import the utility function
 import { Button, Input, Label, Checkbox} from '@/components/ui';// Assuming these are from a UI library
 import { registerUser, googleAuth } from '@/data/api'; // Import new API functions
+import { Loader2 } from 'lucide-react';
 
 // API_URL is no longer directly used for auth operations
 
@@ -267,7 +268,14 @@ const Register = () => {
             <p className={errorMessageClasses}>{generalError}</p>
           )}
           <Button type="submit" className={buttonClasses} disabled={isLoading}>
-            {isLoading ? 'Loading...' : 'Register'}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Registering...</span>
+              </>
+            ) : (
+              'Register'
+            )}
           </Button>
           <div className={separatorContainerClasses}>
             <div className={separatorLineClasses}></div>

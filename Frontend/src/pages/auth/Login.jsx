@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore'; // Import useAuthStore
 import { getAuthPageClasses } from '@/styles/auth/authPageStyles';
 import { Button, Label, Input } from '@/components/ui'; // Assuming these are from a UI library
 import { loginUser, googleAuth } from '@/data/api'; // Import new API functions
+import { Loader2 } from 'lucide-react';
 
 const Login = () => {
   const theme = useThemeStore((state) => state.theme);
@@ -191,7 +192,14 @@ const Login = () => {
           </div>
           {generalError && <p className={errorMessageClasses}>{generalError}</p>}
           <Button type="submit" className={buttonClasses} disabled={isLoading}>
-            {isLoading ? 'Loading...' : 'Login'}
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>Logging in...</span>
+              </>
+            ) : (
+              'Login'
+            )}
           </Button>
           <div className={separatorContainerClasses}>
             <div className={separatorLineClasses}></div>
