@@ -108,10 +108,10 @@ const ListedItems = () => {
           <h1 className={styles.title}>
             <Package className="text-purple-500" /> Listed Items
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <Link to="/start-selling">
-              <Button className="bg-purple-600 hover:bg-purple-700 text-white">
-                List More Products <ArrowRight className="ml-2 h-4 w-4" />
+              <Button className="bg-purple-600 hover:bg-purple-700 text-white text-xs sm:text-sm px-3.5 py-2 sm:px-4 sm:py-2">
+                List More Products <ArrowRight className="ml-1.5 sm:ml-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </Link>
             <button
@@ -122,7 +122,7 @@ const ListedItems = () => {
               className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
               title="Refresh"
             >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <span className={styles.itemCount}>
               {activeTab === 'listed' ? `${items.length} Listed` : `${soldItems.length} Sold`}
@@ -137,26 +137,26 @@ const ListedItems = () => {
           </div>
         )}
 
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center mb-8 px-2">
           <Button
             onClick={() => setActiveTab('listed')}
-            className={`px-6 py-3 rounded-l-lg font-semibold transition-colors duration-200 border-r ${isDark ? 'border-gray-600' : 'border-gray-300'} ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm rounded-l-lg font-semibold transition-colors duration-200 border-r ${isDark ? 'border-gray-600' : 'border-gray-300'} ${
               activeTab === 'listed'
                 ? 'bg-purple-600 text-white hover:bg-purple-700'
                 : `${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
             }`}
           >
-            <Package className="mr-2 h-4 w-4" /> Listed ({items.length})
+            <Package className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Listed ({items.length})
           </Button>
           <Button
             onClick={() => setActiveTab('sold')}
-            className={`px-6 py-3 rounded-r-lg font-semibold transition-colors duration-200 ${
+            className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm rounded-r-lg font-semibold transition-colors duration-200 ${
               activeTab === 'sold'
                 ? 'bg-purple-600 text-white hover:bg-purple-700'
                 : `${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
             }`}
           >
-            <DollarSign className="mr-2 h-4 w-4" /> Sold ({soldItems.length})
+            <DollarSign className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Sold ({soldItems.length})
           </Button>
         </div>
 

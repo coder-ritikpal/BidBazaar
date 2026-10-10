@@ -80,7 +80,7 @@ const YourAuctions = () => {
           <h1 className={styles.title}>
             <Gavel className="text-purple-500" /> Your Auctions
           </h1>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <button
               onClick={() => { fetchEnrolledAuctions(); fetchWonAuctions(); fetchMyOrders(); }}
               className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}

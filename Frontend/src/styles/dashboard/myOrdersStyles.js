@@ -2,9 +2,9 @@ export const getMyOrdersStyles = (theme) => {
   const isDark = theme === 'dark';
   return {
     loadingContainer: `min-h-screen flex items-center justify-center ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
-    container: `min-h-screen py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
-    header: `flex items-center justify-between mb-8`,
-    title: `text-3xl font-bold flex items-center gap-2`,
+    container: `min-h-screen w-full max-w-full overflow-x-hidden py-8 sm:py-12 px-4 sm:px-6 lg:px-8 transition-colors duration-300 ${isDark ? 'bg-[#050510] text-white' : 'bg-gray-50 text-gray-900'}`,
+    header: `flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8`,
+    title: `text-2xl sm:text-3xl font-bold flex items-center gap-2`,
     refreshButton: `p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`,
     errorState: `bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-6`,
     emptyStateContainer: `text-center py-20 rounded-2xl ${isDark ? 'bg-gray-900 border border-gray-800' : 'bg-white border border-gray-100'}`,

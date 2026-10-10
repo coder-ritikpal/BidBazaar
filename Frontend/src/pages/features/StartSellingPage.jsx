@@ -460,14 +460,14 @@ const StartSellingPage = () => {
 
           <div className={classes.formGroup}>
             <label htmlFor="auctionDuration" className={classes.label}>Auction Duration</label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full min-w-0">
               <input
                 type="number"
                 id="auctionDuration"
                 name="auctionDuration"
                 value={formData.auctionDuration}
                 onChange={handleChange}
-                className={classes.input}
+                className={`${classes.input} flex-1 min-w-0`}
                 min="1"
                 placeholder="e.g., 7"
               />
@@ -476,7 +476,7 @@ const StartSellingPage = () => {
                 name="auctionDurationUnit"
                 value={formData.auctionDurationUnit}
                 onChange={handleChange}
-                className={classes.select}
+                className={`${classes.select} flex-1 min-w-0`}
               >
                 <option value="minutes">Minutes</option>
                 <option value="hours">Hours</option>

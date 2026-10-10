@@ -3,12 +3,14 @@ import Navbar from './pages/modules/Navbar'
 import AppRoutes from './routes/Routes.jsx'
 import { ToastContainer, toast } from 'react-toastify';
 import { useAuthStore } from '@/store/authStore'
+import { useThemeStore } from '@/store/themeStore';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import api from './utils/api';
 import Loading from './pages/modules/Loading';
 
 const App = () => {
+  const theme = useThemeStore((state) => state.theme);
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus);
   const login = useAuthStore((state) => state.login);
   const showGoogleLoginToast = useAuthStore((state) => state.showGoogleLoginToast);
@@ -16,6 +18,20 @@ const App = () => {
   const navigate = useNavigate();
 
   const [isWakingUp, setIsWakingUp] = useState(true);
+
+  // Synchronize theme with document and body to prevent white overflow stripes
+  useEffect(() => {
+    const isDark = theme === 'dark';
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.style.backgroundColor = '#050510';
+      document.body.style.backgroundColor = '#050510';
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.style.backgroundColor = '#f9fafb';
+      document.body.style.backgroundColor = '#f9fafb';
+    }
+  }, [theme]);
 
   useEffect(() => {
     // Wake up backend services logic
