@@ -10,6 +10,8 @@ import { connectRedis } from "./src/cache/redis.js";
 
 const PORT = process.env.PORT || 3002;
 
+const server = http.createServer(app);
+
 const allowedOrigins = [
   config.FRONTEND_URL,
   "http://localhost:5173",
