@@ -362,6 +362,7 @@ export const getAuctionById = async (req, res) => {
 };
 
 export const auctionBid = async (req, res) => {
+  let createdBidId = null;
   try {
     const { auctionId } = req.params;
     let { amount } = req.body;
@@ -476,6 +477,7 @@ export const auctionBid = async (req, res) => {
       amount,
     });
     await newBid.save(); // Wait for bid to be written
+    createdBidId = bidId;
 
     // 2. Atomically update the auction ONLY IF currentPrice is still less than amount.
     //    Append a bidder only once. $concatArrays makes the numbering order explicit;
@@ -548,7 +550,7 @@ export const auctionBid = async (req, res) => {
           },
         },
       }],
-      { new: true }
+      { new: true, updatePipeline: true }
     );
 
     if (!updatedAuction) {
@@ -597,6 +599,9 @@ export const auctionBid = async (req, res) => {
     res.status(201).json({ message: "Bid placed successfully.", bid: newBid });
   } catch (error) {
     console.error("Error placing bid:", error);
+    if (createdBidId) {
+      await bidModel.findByIdAndDelete(createdBidId).catch(() => {});
+    }
     res.status(500).json({ message: "Failed to place bid." });
   }
 };

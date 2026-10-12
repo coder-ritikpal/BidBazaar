@@ -111,7 +111,7 @@ describe("auctionBid", () => {
       .toBeInstanceOf(mongoose.Types.ObjectId);
     expect(updatePipeline[0].$set.uniqueBidders.$let.in.$cond[0].$in[0].$literal)
       .toEqual(new mongoose.Types.ObjectId(bidderId));
-    expect(options).toEqual({ new: true });
+    expect(options).toEqual({ new: true, updatePipeline: true });
     expect(bidModelMock).toHaveBeenCalledWith(expect.objectContaining({
       auctionId,
       bidderId,
