@@ -77,6 +77,12 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
     );
   }, [filteredAuctions, searchQuery]);
 
+  const FEATURED_AUCTIONS_LIMIT = 4;
+
+  const displayedFeaturedAuctions = useMemo(() => {
+    return searchedAndFilteredAuctions.slice(0, FEATURED_AUCTIONS_LIMIT);
+  }, [searchedAndFilteredAuctions]);
+
   const getAuctionTimeLabel = (auction) => {
     if (auction.status === 'upcoming') {
       return `Starts in ${formatAuctionCountdown(auction.startAuctionAt, now, 'Starting soon')}`;
@@ -159,9 +165,9 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
         </div>
       )}
 
-      {!loading && !error && searchedAndFilteredAuctions.length > 0 && (
-        <div className={`${classes.auctionGrid} max-[350px]:grid-cols-1`}>
-          {searchedAndFilteredAuctions.map((auction) => {
+      {!loading && !error && displayedFeaturedAuctions.length > 0 && (
+        <div className={classes.auctionGrid}>
+          {displayedFeaturedAuctions.map((auction) => {
             const auctionId = auction.id || auction._id;
             const isWishlisted = wishlistIds.has(auctionId);
             return (
