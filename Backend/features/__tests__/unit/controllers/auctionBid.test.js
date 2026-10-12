@@ -50,6 +50,7 @@ describe("auctionBid", () => {
     bidFindMock.mockReturnValue({ sort: bidFindSortMock });
     bidFindSortMock.mockReturnValue({ select: bidFindSelectMock });
     bidFindSelectMock.mockReturnValue({ lean: bidFindLeanMock });
+    bidFindOneMock.mockResolvedValue(null);
 
     mockIo.to.mockReturnValue({
       emit: mockEmit,
@@ -254,6 +255,19 @@ describe("auctionBid", () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       message: "Bid amount must be in multiples of 10.",
+    });
+  });
+
+  it("should return 400 if bidder is already the highest bidder", async () => {
+    findByIdMock.mockResolvedValue({ ...liveAuction });
+    bidFindOneMock.mockResolvedValue({
+      bidderId: bidderId,
+      amount: 1200,
+    });
+    await auctionBid(req, res);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "You are already the highest bidder. You cannot bid against yourself.",
     });
   });
 

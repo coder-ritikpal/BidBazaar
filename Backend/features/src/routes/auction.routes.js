@@ -13,7 +13,7 @@ import {
   getWonAuctionsByUser,
   retryUnresolvedOrderCreation,
 } from "../controllers/auction.controller.js";
-import { authMiddleware } from "../middlewares/auth.middleware.js";
+import { authMiddleware, optionalAuthMiddleware } from "../middlewares/auth.middleware.js";
 import { internalAuthMiddleware } from "../middlewares/internalAuth.middleware.js";
 
 const router = express.Router();
@@ -27,7 +27,7 @@ router.post("/internal/orders/retry-unresolved", internalAuthMiddleware, retryUn
 // Bidding and management routes
 // These should come before the generic /:auctionId route to ensure correct matching
 router.post("/:auctionId/bid", authMiddleware, auctionBid);
-router.get("/:auctionId/bids", getBidsForAuction);
+router.get("/:auctionId/bids", optionalAuthMiddleware, getBidsForAuction);
 router.post("/:auctionId/end", authMiddleware, endAuction);
 router.post("/:auctionId/cancel", authMiddleware, cancelAuction);
 

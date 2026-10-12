@@ -86,6 +86,37 @@ const getAuctionEndTime = (auction) => {
   return new Date(new Date(auction.startAuctionAt).getTime() + durationInMs);
 };
 
+export const maskName = (name) => {
+  if (!name || typeof name !== 'string') return '';
+  const trimmed = name.trim();
+  if (trimmed.length <= 2) return `${trimmed[0]}*`;
+  if (trimmed.length === 3) return `${trimmed[0]}*${trimmed[2]}`;
+  return `${trimmed[0]}***${trimmed[trimmed.length - 1]}`;
+};
+
+export const formatMaskedBidder = (fullName) => {
+  if (!fullName) return null;
+  let firstName = '';
+  let lastName = '';
+  if (typeof fullName === 'object') {
+    firstName = fullName.firstName || '';
+    lastName = fullName.lastName || '';
+  } else if (typeof fullName === 'string') {
+    const parts = fullName.trim().split(/\s+/);
+    firstName = parts[0] || '';
+    lastName = parts.slice(1).join(' ') || '';
+  }
+  if (firstName && lastName) {
+    const maskedFirst = maskName(firstName);
+    const lastInitial = lastName.trim()[0]?.toUpperCase() || '';
+    return `${maskedFirst} ${lastInitial}.`;
+  }
+  if (firstName) {
+    return maskName(firstName);
+  }
+  return null;
+};
+
 export const getAuctionStatus = (auction, now = Date.now()) => { // Exported for potential external use/testing
   if (auction.cancelledAt) return "cancelled";
   if (auction.endAuctionAt && now >= new Date(auction.endAuctionAt).getTime()) {
@@ -404,6 +435,14 @@ export const auctionBid = async (req, res) => {
       return res.status(400).json({ message: "Bid amount must be in multiples of 10." });
     }
 
+    // Check if bidder is already the highest bidder to prevent self-bidding misuse
+    const latestBid = await bidModel.findOne({ auctionId }, null, { sort: { createdAt: -1 } });
+    if (latestBid && String(latestBid.bidderId) === String(bidderId)) {
+      return res.status(400).json({
+        message: "You are already the highest bidder. You cannot bid against yourself."
+      });
+    }
+
     // Older auctions predate uniqueBidders. Backfill their bidders from bid
     // history once so labels continue after the existing bidders.
     if ((!Array.isArray(auction.uniqueBidders) || auction.uniqueBidders.length === 0)
@@ -469,11 +508,15 @@ export const auctionBid = async (req, res) => {
     // Pre-generate the bid ID
     const bidId = new mongoose.Types.ObjectId();
 
+    const rawName = req.body?.bidderName || req.body?.fullName || '';
+    const maskedBidderName = formatMaskedBidder(rawName);
+
     // 1. Create the bid document first to guarantee persistence before altering auction price
     const newBid = new bidModel({
       _id: bidId,
       auctionId,
       bidderId,
+      bidderName: maskedBidderName,
       amount,
     });
     await newBid.save(); // Wait for bid to be written
@@ -572,14 +615,17 @@ export const auctionBid = async (req, res) => {
         (id) => String(id) === bidderIdStr
       );
       // findIndex returns -1 only if something went very wrong; fall back gracefully.
-      const bidderLabel = bidderIndex >= 0
+      const fallbackLabel = bidderIndex >= 0
         ? `Bidder ${bidderIndex + 1}`
         : `Bidder ?`;
+      const bidderLabel = maskedBidderName || fallbackLabel;
 
       io.to(auctionId).emit('new_bid', {
         auctionId,
         currentPrice: updatedAuction.currentPrice,
         bid: {
+          _id: newBid._id,
+          bidderId: newBid.bidderId,
           amount: newBid.amount,
           createdAt: newBid.createdAt,
           bidderLabel,
@@ -638,13 +684,24 @@ export const getBidsForAuction = async (req, res) => {
       bidderOrder.map((id, i) => [String(id), `Bidder ${i + 1}`])
     );
 
-    const publicBids = chronologicalBids.map((bid) => ({
-      _id: bid._id,
-      auctionId: bid.auctionId,
-      amount: bid.amount,
-      createdAt: bid.createdAt,
-      bidderLabel: labelMap.get(String(bid.bidderId)) ?? "Bidder ?",
-    })).reverse();
+    const viewingUserId = req.user?.id ? String(req.user.id) : null;
+
+    const publicBids = chronologicalBids.map((bid) => {
+      const bidBidderId = String(bid.bidderId);
+      const isSelf = viewingUserId ? viewingUserId === bidBidderId : false;
+      const defaultLabel = labelMap.get(bidBidderId) ?? "Bidder ?";
+      const displayLabel = isSelf ? "You" : (bid.bidderName || defaultLabel);
+
+      return {
+        _id: bid._id,
+        auctionId: bid.auctionId,
+        bidderId: bid.bidderId,
+        amount: bid.amount,
+        createdAt: bid.createdAt,
+        isSelf,
+        bidderLabel: displayLabel,
+      };
+    }).reverse();
 
     res.status(200).json({ message: "Bids fetched successfully.", bids: publicBids });
   } catch (error) {

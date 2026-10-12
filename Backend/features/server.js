@@ -10,13 +10,26 @@ import { connectRedis } from "./src/cache/redis.js";
 
 const PORT = process.env.PORT || 3002;
 
-const server = http.createServer(app);
+const allowedOrigins = [
+  config.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://rp-bidbazaar.netlify.app",
+  "https://bidbazaar.netlify.app",
+].filter(Boolean);
 
 const io = new Server(server, {
   cors: {
-    origin: config.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some((o) => origin && origin.startsWith(o))) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
+    methods: ["GET", "POST"],
     credentials: true,
   },
+  transports: ["websocket", "polling"],
 });
 
 initializeSocket(io);

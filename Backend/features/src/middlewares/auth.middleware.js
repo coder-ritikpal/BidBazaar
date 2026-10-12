@@ -29,3 +29,24 @@ export const authMiddleware = (req, res, next) => {
     });
   }
 };
+
+export const optionalAuthMiddleware = (req, res, next) => {
+  let token = req.cookies?.token;
+
+  if (!token) {
+    const authHeader = req.headers?.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.split(" ")[1];
+    }
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      req.user = decoded;
+    } catch {
+      // Ignore token errors for optional auth
+    }
+  }
+  next();
+};

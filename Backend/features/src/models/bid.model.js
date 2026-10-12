@@ -11,6 +11,9 @@ const bidSchema = new mongoose.Schema({
     ref: "user",
     required: true,
   },
+  bidderName: {
+    type: String,
+  },
   amount: {
     type: Number,
     required: true,

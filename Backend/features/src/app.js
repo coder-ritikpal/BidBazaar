@@ -19,9 +19,22 @@ const app = express();
 // Security headers — must be first
 app.use(helmet());
 
+const allowedOrigins = [
+  config.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://rp-bidbazaar.netlify.app",
+  "https://bidbazaar.netlify.app",
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: config.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some((o) => origin && origin.startsWith(o))) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   }),
 );
