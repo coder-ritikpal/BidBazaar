@@ -7,7 +7,7 @@ import { getAuctionDetailsPageClasses } from '@/styles/features/auctionDetailsPa
 import { getCountdownParts, formatDateTime } from '@/lib/auctionStatus';
 import Footer from '@/pages/modules/Footer';
 import { toast } from 'react-toastify';
-import { Gavel, User, Info, History } from 'lucide-react';
+import { Gavel, User, Info, History, CheckCircle } from 'lucide-react';
 import { getAuctionDetails, getAuctionBids, bidOnAuction, getUserPublicProfile } from '@/data/api';
 
 const CountdownDisplay = ({ parts, label, classes }) => (
@@ -94,7 +94,10 @@ const AuctionDetailsPage = () => {
   }, [fetchAuction, fetchBids]);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, { withCredentials: true });
+    const socket = io(SOCKET_URL, {
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+    });
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
@@ -103,21 +106,42 @@ const AuctionDetailsPage = () => {
 
     socket.on('new_bid', (data) => {
       if (data.auctionId === auctionId) {
-        // Update auction price and bid count
+        const activeUserId = String(user?._id || user?.id || '');
+        const isFromCurrentViewer = Boolean(activeUserId && data.bid?.bidderId && String(data.bid.bidderId) === activeUserId);
+
+        // Update auction price and trigger visual flash
         setAuction(prevAuction => {
-          if (prevAuction && data.currentPrice > prevAuction.currentPrice) {
-            // Trigger visual flash
-            setIsFlashing(true);
-            setTimeout(() => setIsFlashing(false), 1000);
-            return { ...prevAuction, currentPrice: data.currentPrice, bids: [...(prevAuction.bids || []), data.bid._id] };
+          if (!prevAuction) return prevAuction;
+          setIsFlashing(true);
+          setTimeout(() => setIsFlashing(false), 1000);
+          const updatedBids = Array.isArray(prevAuction.bids) ? [...prevAuction.bids] : [];
+          if (data.bid?._id && !updatedBids.includes(data.bid._id)) {
+            updatedBids.push(data.bid._id);
           }
-          return prevAuction;
+          return {
+            ...prevAuction,
+            currentPrice: data.currentPrice,
+            bids: updatedBids,
+          };
         });
 
-        // Add new bid to the top of the history
-        setBids(prevBids => [data.bid, ...prevBids]);
+        // Add new bid to the top of the history without duplicates
+        const formattedBid = {
+          ...data.bid,
+          isSelf: isFromCurrentViewer,
+          bidderLabel: isFromCurrentViewer ? 'You' : (data.bid.bidderLabel || 'Bidder'),
+        };
 
-        toast.info(`New bid of Rs.${data.bid.amount} placed!`);
+        setBids(prevBids => {
+          if (data.bid?._id && prevBids.some(b => String(b._id) === String(data.bid._id))) {
+            return prevBids;
+          }
+          return [formattedBid, ...prevBids];
+        });
+
+        if (!isFromCurrentViewer) {
+          toast.info(`New bid of Rs.${data.bid.amount} placed by ${formattedBid.bidderLabel}!`);
+        }
       }
     });
 
@@ -128,7 +152,7 @@ const AuctionDetailsPage = () => {
     return () => {
       socket.disconnect();
     };
-  }, [auctionId, SOCKET_URL]);
+  }, [auctionId, SOCKET_URL, user]);
 
   useEffect(() => {
     if (!auction || (auction.status !== 'live' && auction.status !== 'upcoming')) return;
@@ -186,11 +210,21 @@ const AuctionDetailsPage = () => {
     };
   }, [auction]);
 
+  const currentUserId = String(user?._id || user?.id || '');
+  const isHighestBidder = Boolean(
+    isLoggedIn && currentUserId && bids.length > 0 && String(bids[0].bidderId) === currentUserId
+  );
+
   const handleBidSubmit = async (e) => {
     e.preventDefault();
     if (!isLoggedIn) {
       toast.info('Please log in to place a bid.');
       navigate('/login');
+      return;
+    }
+
+    if (isHighestBidder) {
+      toast.info('You are already the highest bidder. You cannot bid against yourself.');
       return;
     }
 
@@ -205,11 +239,18 @@ const AuctionDetailsPage = () => {
       return;
     }
 
+    const userFullName = user?.fullName
+      ? `${user.fullName.firstName || ''} ${user.fullName.lastName || ''}`.trim()
+      : (user?.name || '');
+
     setIsBidding(true);
     try {
-      await bidOnAuction(auctionId, bidValue);
+      await bidOnAuction(auctionId, bidValue, userFullName);
       toast.success('Bid placed successfully!');
       setBidAmount('');
+      // Instantly refresh auction details and bid history so this tab updates without delay
+      fetchAuction();
+      fetchBids();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to place bid. Please try again.');
     } finally {
@@ -309,23 +350,36 @@ const AuctionDetailsPage = () => {
             </div>
 
             {auction.status === 'live' && !isOwner && (
-              <form onSubmit={handleBidSubmit} className={classes.bidForm}>
-                <div className={classes.bidInputWrapper}>
-                  <span className={classes.bidInputCurrency}>Rs.</span>
-                  <input
-                    type="number"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder={`e.g., ${minNextBid}`}
-                    className={classes.bidInput}
-                    disabled={isBidding}
-                  />
-                </div>
-                <button type="submit" className={classes.bidButton} disabled={isBidding}>
-                  <Gavel size={20} className="mr-2" />
-                  {isBidding ? 'Placing Bid...' : 'Place Bid'}
-                </button>
-              </form>
+              <>
+                {isHighestBidder && (
+                  <div className="mb-3 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-semibold flex items-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <CheckCircle size={18} className="mr-2 shrink-0 text-emerald-400" />
+                    You are currently the highest bidder!
+                  </div>
+                )}
+                <form onSubmit={handleBidSubmit} className={classes.bidForm}>
+                  <div className={classes.bidInputWrapper}>
+                    <span className={classes.bidInputCurrency}>Rs.</span>
+                    <input
+                      type="number"
+                      value={bidAmount}
+                      onChange={(e) => setBidAmount(e.target.value)}
+                      placeholder={isHighestBidder ? "You hold the highest bid" : `e.g., ${minNextBid}`}
+                      className={classes.bidInput}
+                      disabled={isBidding || isHighestBidder}
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className={`${classes.bidButton} ${isHighestBidder ? 'opacity-60 cursor-not-allowed' : ''}`}
+                    disabled={isBidding || isHighestBidder}
+                    title={isHighestBidder ? "You are already the highest bidder" : "Place Bid"}
+                  >
+                    <Gavel size={20} className="mr-2" />
+                    {isBidding ? 'Placing Bid...' : isHighestBidder ? 'Highest Bidder' : 'Place Bid'}
+                  </button>
+                </form>
+              </>
             )}
 
             {auction.status === 'live' && isOwner && (
@@ -423,11 +477,18 @@ const AuctionDetailsPage = () => {
                   {(showAllBids ? bids : bids.slice(0, 3)).map((bid, index) => {
                     // Check if this bid is the highest (most recent) among the displayed ones
                     const isHighestBid = index === 0;
+                    const isUserOwnBid = Boolean(bid.isSelf || (currentUserId && bid.bidderId && String(bid.bidderId) === currentUserId));
+                    const label = isUserOwnBid ? 'You' : (bid.bidderLabel || 'Bidder');
                     return (
-                      <li key={bid._id} className={`${classes.bidItem} ${isHighestBid ? classes.highestBidItem : ''}`}>
+                      <li key={bid._id || `${index}-${bid.amount}`} className={`${classes.bidItem} ${isHighestBid ? classes.highestBidItem : ''}`}>
                         <div className={classes.bidItemInfo}>
                           <span className={classes.bidderName}>
-                            {bid.bidderLabel || 'Bidder'}
+                            {label}
+                            {isUserOwnBid && (
+                              <span className="ml-1.5 px-2 py-0.5 text-xs rounded-full bg-purple-500/20 text-purple-400 font-semibold border border-purple-500/30">
+                                You
+                              </span>
+                            )}
                             {isHighestBid && <span className={classes.highestBidBadge}>Highest</span>}
                           </span>
                           <span className={classes.bidTime}>{formatDateTime(bid.createdAt, { includeSeconds: true })}</span>

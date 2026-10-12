@@ -57,8 +57,8 @@ export const getAuctionBids = async (auctionId) => {
   return api.get(`/dashboard/auctions/${auctionId}/bids`);
 };
 
-export const bidOnAuction = async (auctionId, amount) => {
-  return api.post(`/dashboard/auctions/${auctionId}/bid`, { amount });
+export const bidOnAuction = async (auctionId, amount, bidderName) => {
+  return api.post(`/dashboard/auctions/${auctionId}/bid`, { amount, bidderName });
 };
 
 export const getUserPublicProfile = async (userId) => {
