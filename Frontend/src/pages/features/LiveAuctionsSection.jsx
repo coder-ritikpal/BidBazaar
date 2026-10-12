@@ -6,7 +6,7 @@ import { ArrowRight, Heart } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'react-toastify';
 import { useAuctionStore } from "@/store/auctionStore";
-import { formatAuctionCountdown, getAuctionStatus as getClientAuctionStatus } from "@/lib/auctionStatus";
+import { formatAuctionCountdown, formatDateTime, getAuctionStatus as getClientAuctionStatus } from "@/lib/auctionStatus";
 import { useDashboardStore } from '@/store/dashboardStore';
 
 const LiveAuctionsSection = ({ selectedCategory }) => {
@@ -86,7 +86,7 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
       return `${formatAuctionCountdown(auction.endAuctionAt, now)} remaining`;
     }
 
-    return `Ended on ${new Date(auction.endAuctionAt).toLocaleString()}`;
+    return `Ended on ${formatDateTime(auction.endAuctionAt)}`;
   };
 
   const getStatusBadgeClasses = (status) =>

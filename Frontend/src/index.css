@@ -54,6 +54,7 @@
 }
 
 :root {
+  color-scheme: light;
   --radius: 0.625rem;
   --background: oklch(0.98 0.01 240);
   --foreground: oklch(0.15 0.02 240);
@@ -89,6 +90,7 @@
 }
 
 .dark {
+  color-scheme: dark;
   --background: oklch(0.14 0.02 240);
   --foreground: oklch(0.98 0.01 240);
   --card: oklch(0.17 0.02 240);
@@ -132,6 +134,16 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .dark select,
+  .dark select option {
+    background-color: #000000;
+    color: #ffffff;
+  }
+  .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  .dark input[type="date"]::-webkit-calendar-picker-indicator,
+  .dark input[type="time"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
   }
 }
 

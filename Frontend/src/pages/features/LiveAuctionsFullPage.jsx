@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { toast } from 'react-toastify';
 import { useAuctionStore } from "@/store/auctionStore";
-import { formatAuctionCountdown, getAuctionStatus as getClientAuctionStatus } from "@/lib/auctionStatus";
+import { formatAuctionCountdown, formatDateTime, getAuctionStatus as getClientAuctionStatus } from "@/lib/auctionStatus";
 import CategoriesCarousel from '@/pages/containers/CategoriesCarousel';
 
 const LiveAuctionsFullPage = () => { // Renamed component
@@ -101,7 +101,7 @@ const LiveAuctionsFullPage = () => { // Renamed component
     if (auction.status === 'live') {
       return `${formatAuctionCountdown(auction.endAuctionAt, now)} remaining`;
     }
-    return `Ended on ${new Date(auction.endAuctionAt).toLocaleString()}`;
+    return `Ended on ${formatDateTime(auction.endAuctionAt)}`;
   };
 
   const getStatusLabel = (status) => {

@@ -26,10 +26,12 @@ const App = () => {
       document.documentElement.classList.add('dark');
       document.documentElement.style.backgroundColor = '#050510';
       document.body.style.backgroundColor = '#050510';
+      document.documentElement.style.colorScheme = 'dark';
     } else {
       document.documentElement.classList.remove('dark');
       document.documentElement.style.backgroundColor = '#f9fafb';
       document.body.style.backgroundColor = '#f9fafb';
+      document.documentElement.style.colorScheme = 'light';
     }
   }, [theme]);
 

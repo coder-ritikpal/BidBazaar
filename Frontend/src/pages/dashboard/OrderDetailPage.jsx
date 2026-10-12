@@ -7,6 +7,7 @@ import { getOrderDetailStyles } from '@/styles/dashboard/orderDetailStyles';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
 import { CheckCircle, CreditCard, Package, Truck, Home, ArrowLeft } from 'lucide-react';
+import { formatDate } from '@/lib/auctionStatus';
 
 const OrderDetailPage = () => {
   const { orderId } = useParams();
@@ -98,7 +99,7 @@ const OrderDetailPage = () => {
             <p className={styles.orderId}>ORDER #{order._id.toUpperCase()}</p>
           </div>
           <p className={styles.orderDate}>
-            Placed on {new Date(order.createdAt).toLocaleDateString()}
+            Placed on {formatDate(order.createdAt)}
           </p>
         </div>
 

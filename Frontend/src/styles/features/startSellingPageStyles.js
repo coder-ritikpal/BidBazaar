@@ -11,19 +11,20 @@ export const getStartSellingPageClasses = (theme) => {
     label: `mb-2 text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`,
     input: `w-full min-w-0 p-3 sm:p-3.5 rounded-xl border transition-all duration-300 outline-none box-border ${
       isDark 
-        ? 'bg-[#050510]/50 border-purple-500/30 text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+        ? 'bg-black border-purple-500/30 text-white [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+        : 'bg-gray-50 border-gray-300 text-gray-900 [color-scheme:light] focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
     }`,
     textarea: `w-full min-w-0 p-3 sm:p-3.5 rounded-xl border transition-all duration-300 outline-none resize-y box-border ${
       isDark 
-        ? 'bg-[#050510]/50 border-purple-500/30 text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+        ? 'bg-black border-purple-500/30 text-white [color-scheme:dark] focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+        : 'bg-gray-50 border-gray-300 text-gray-900 [color-scheme:light] focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
     }`,
     select: `w-full min-w-0 p-3 sm:p-3.5 rounded-xl border transition-all duration-300 outline-none box-border ${
       isDark 
-        ? 'bg-[#050510]/50 border-purple-500/30 text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
-        : 'bg-gray-50 border-gray-300 text-gray-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+        ? 'bg-black border-purple-500/30 text-white [color-scheme:dark] [&>option]:bg-black [&>option]:text-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+        : 'bg-gray-50 border-gray-300 text-gray-900 [color-scheme:light] [&>option]:bg-white [&>option]:text-gray-900 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
     }`,
+    option: isDark ? 'bg-black text-white' : 'bg-white text-gray-900',
     formRow: 'flex flex-col md:flex-row gap-4 sm:gap-6 w-full max-w-full',
     formGroupHalf: 'flex-1 w-full min-w-0',
     fileInput: `block w-full max-w-full text-xs sm:text-sm ${textColor} file:mr-2 sm:file:mr-4 file:py-2 sm:file:py-2.5 file:px-4 sm:file:px-6 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-bold transition-all ${isDark ? 'file:bg-linear-to-r file:from-blue-500 file:to-purple-500 file:text-white hover:file:shadow-[0_0_15px_rgba(168,85,247,0.4)]' : 'file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200'} cursor-pointer`,

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { getListedItemsStyles } from '@/styles/dashboard/listedItemsStyles';
 import { useInventoryStore } from '@/store/inventoryStore';
 import { useCartStore } from '@/store/cartStore';
+import { formatDateTime as formatDateTimeUtil } from '@/lib/auctionStatus';
 
 const ListedItems = () => {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ const ListedItems = () => {
 
   const formatDateTime = (value) => {
     if (!value) return null;
-    return new Date(value).toLocaleString();
+    return formatDateTimeUtil(value);
   };
 
   const getStatusBadgeClass = (status) => {

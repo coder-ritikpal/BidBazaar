@@ -419,9 +419,9 @@ const StartSellingPage = () => {
           <div className={classes.formGroup}>
             <label htmlFor="category" className={classes.label}>Category</label>
             <select id="category" name="category" value={formData.category} onChange={handleChange} className={classes.select}>
-              <option value="">Select a category</option>
+              <option value="" className={classes.option}>Select a category</option>
               {PRODUCT_CATEGORIES.map((category) => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category} value={category} className={classes.option}>{category}</option>
               ))}
             </select>
             {errors.category && <p className={classes.errorText}>{errors.category}</p>}
@@ -438,8 +438,8 @@ const StartSellingPage = () => {
           <div className={classes.formGroup}>
             <label htmlFor="startOption" className={classes.label}>Auction Start</label>
             <select id="startOption" name="startOption" value={formData.startOption} onChange={handleChange} className={classes.select}>
-              <option value="now">Start now</option>
-              <option value="later">Schedule for later</option>
+              <option value="now" className={classes.option}>Start now</option>
+              <option value="later" className={classes.option}>Schedule for later</option>
             </select>
           </div>
 
@@ -478,9 +478,9 @@ const StartSellingPage = () => {
                 onChange={handleChange}
                 className={`${classes.select} flex-1 min-w-0`}
               >
-                <option value="minutes">Minutes</option>
-                <option value="hours">Hours</option>
-                <option value="days">Days</option>
+                <option value="minutes" className={classes.option}>Minutes</option>
+                <option value="hours" className={classes.option}>Hours</option>
+                <option value="days" className={classes.option}>Days</option>
               </select>
             </div>
             {errors.auctionDuration && <p className={classes.errorText}>{errors.auctionDuration}</p>}
@@ -498,7 +498,7 @@ const StartSellingPage = () => {
               <label htmlFor="sizeUnit" className={classes.label}>Size Unit</label>
               <select id="sizeUnit" name="sizeUnit" value={formData.sizeUnit} onChange={handleChange} className={classes.select}>
                 {PRODUCT_SIZE_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>{unit}</option>
+                  <option key={unit} value={unit} className={classes.option}>{unit}</option>
                 ))}
               </select>
               {errors.sizeUnit && <p className={classes.errorText}>{errors.sizeUnit}</p>}
@@ -516,7 +516,7 @@ const StartSellingPage = () => {
               <label htmlFor="weightUnit" className={classes.label}>Weight Unit</label>
               <select id="weightUnit" name="weightUnit" value={formData.weightUnit} onChange={handleChange} className={classes.select}>
                 {PRODUCT_WEIGHT_UNITS.map((unit) => (
-                  <option key={unit} value={unit}>{unit}</option>
+                  <option key={unit} value={unit} className={classes.option}>{unit}</option>
                 ))}
               </select>
               {errors.weightUnit && <p className={classes.errorText}>{errors.weightUnit}</p>}
@@ -540,9 +540,9 @@ const StartSellingPage = () => {
             <div className={classes.formGroupHalf}>
               <label htmlFor="condition" className={classes.label}>Condition</label>
               <select id="condition" name="condition" value={formData.condition} onChange={handleChange} className={classes.select}>
-                <option value="">Select condition</option>
+                <option value="" className={classes.option}>Select condition</option>
                 {PRODUCT_CONDITIONS.map((condition) => (
-                  <option key={condition} value={condition}>{condition}</option>
+                  <option key={condition} value={condition} className={classes.option}>{condition}</option>
                 ))}
               </select>
               {errors.condition && <p className={classes.errorText}>{errors.condition}</p>}

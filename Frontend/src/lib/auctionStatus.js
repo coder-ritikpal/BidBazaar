@@ -117,3 +117,43 @@ export const formatAuctionCountdown = (targetTime, now = Date.now(), endedLabel 
   }
   return `${seconds}s`;
 };
+
+export const formatDate = (value) => {
+  if (!value) return '';
+  const date = toDate(value);
+  if (!date) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
+
+export const formatDateTime = (value, { includeSeconds = false, hour12 = true } = {}) => {
+  if (!value) return '';
+  const date = toDate(value);
+  if (!date) return '';
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  if (hour12) {
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12 || 12;
+    const formattedHours = String(hours).padStart(2, '0');
+    if (includeSeconds) {
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${day}/${month}/${year}, ${formattedHours}:${minutes}:${seconds} ${ampm}`;
+    }
+    return `${day}/${month}/${year}, ${formattedHours}:${minutes} ${ampm}`;
+  }
+
+  const formattedHours = String(hours).padStart(2, '0');
+  if (includeSeconds) {
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${day}/${month}/${year}, ${formattedHours}:${minutes}:${seconds}`;
+  }
+  return `${day}/${month}/${year}, ${formattedHours}:${minutes}`;
+};

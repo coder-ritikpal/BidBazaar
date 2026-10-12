@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import { useThemeStore } from '@/store/themeStore';
 import { useAuthStore } from '@/store/authStore';
 import { getAuctionDetailsPageClasses } from '@/styles/features/auctionDetailsPageStyles';
-import { getCountdownParts } from '@/lib/auctionStatus';
+import { getCountdownParts, formatDateTime } from '@/lib/auctionStatus';
 import Footer from '@/pages/modules/Footer';
 import { toast } from 'react-toastify';
 import { Gavel, User, Info, History } from 'lucide-react';
@@ -354,7 +354,7 @@ const AuctionDetailsPage = () => {
                 </div>
               ) : (
                 <div className={classes.endedMessage}>
-                  This auction ended on {new Date(auction.endAuctionAt).toLocaleString()}.
+                  This auction ended on {formatDateTime(auction.endAuctionAt)}.
                   {winnerName ? (
                     <p className="mt-1">
                       Won by <strong>{winnerName}</strong> with a bid of Rs.{auction.currentPrice}.
@@ -430,7 +430,7 @@ const AuctionDetailsPage = () => {
                             {bid.bidderLabel || 'Bidder'}
                             {isHighestBid && <span className={classes.highestBidBadge}>Highest</span>}
                           </span>
-                          <span className={classes.bidTime}>{new Date(bid.createdAt).toLocaleString()}</span>
+                          <span className={classes.bidTime}>{formatDateTime(bid.createdAt, { includeSeconds: true })}</span>
                         </div>
                         <span className={classes.bidAmount}>Rs.{bid.amount}</span>
                       </li>
