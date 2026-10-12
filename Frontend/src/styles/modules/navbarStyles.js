@@ -23,14 +23,14 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
     }`,
 
     // Mobile search input field
-    mobileSearchInputClasses: `flex-1 px-4 py-2 rounded-full border transition-all duration-300 ${
+    mobileSearchInputClasses: `w-full pl-4 pr-10 py-2 rounded-full border transition-all duration-300 text-sm ${
       isDark 
-        ? 'bg-[#0f0c29]/60 border-purple-500/30 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
+        ? 'bg-[#0f0c29]/90 border-purple-500/30 text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)]' 
         : 'bg-gray-50 border-purple-200 text-gray-900 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.2)]'
     }`,
 
     // Mobile search close button
-    mobileSearchCloseButtonClasses: 'text-xl p-2 ml-2 hover:scale-110 transition-transform',
+    mobileSearchCloseButtonClasses: 'p-1.5 ml-1 rounded-full hover:scale-110 transition-transform cursor-pointer shrink-0',
 
     // Logo container (Link)
     logoLinkClasses: `flex items-center gap-2 cursor-pointer shrink-0 group`,

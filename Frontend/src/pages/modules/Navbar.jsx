@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'; // Import Link, useLocation, and useNavigate
 import { useThemeStore } from '@/store/themeStore'; // Import useThemeStore from the store index
-import { User, Search, Sun, MoonStar } from 'lucide-react'; // Import additional Lucide icons (X is now only in ProfileSidebar)
+import { User, Search, Sun, MoonStar, X } from 'lucide-react'; // Import additional Lucide icons
 import { ProfileSidebar } from '@/pages/containers/ProfileSidebar'; // Import the new ProfileSidebar component
 import { useAuthStore } from '@/store/authStore'; // Import useAuthStore
 import { getNavbarClasses } from '@/styles/modules/navbarStyles'; // Import the utility function
@@ -109,7 +109,9 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
   }, [isSearchOpen]);
 
   const handleSearch = (e) => {
-    e.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     if (searchQuery.trim()) {
       navigate(`/auctions?q=${encodeURIComponent(searchQuery.trim())}`);
       setIsSearchOpen(false); // Close mobile search on submit
@@ -121,25 +123,42 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
       <nav className={navClasses}>
         {/* Mobile Search Overlay */}
         {/* Ensure overlay doesn't show on auth pages */}
-        {isSearchOpen && !isAuthPage && ( // Increased vertical padding (py-4 to py-8) and gap (gap-2 to gap-4) for better spacing
+        {isSearchOpen && !isAuthPage && (
           <div className={mobileSearchOverlayClasses}>
-            <input
-              as="form"
-              onSubmit={handleSearch}
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search..."
-              className={mobileSearchInputClasses}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <form onSubmit={handleSearch} action="#" className="flex-1 flex items-center">
+              <div className="relative w-full flex items-center">
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  enterKeyHint="search"
+                  placeholder="Search for items..."
+                  className={mobileSearchInputClasses}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch(e);
+                    }
+                  }}
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2.5 p-1 text-purple-400 hover:text-purple-300"
+                  aria-label="Search"
+                  title="Search"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
+              </div>
+            </form>
             <button
+              type="button"
               className={mobileSearchCloseButtonClasses}
               title="Close search"
               aria-label="Close search"
               onClick={() => setIsSearchOpen(false)}
             >
-              ✖️
+              <X className="h-5 w-5 text-gray-400 hover:text-gray-200" />
             </button>
           </div>
         )}
@@ -152,13 +171,19 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
 
         {/* Middle: Search Bar (Desktop only, or mobile trigger) */}
         <div className={desktopSearchBarContainerClasses}>
-          <form onSubmit={handleSearch} className="w-full max-w-md">
+          <form onSubmit={handleSearch} action="#" className="w-full max-w-md">
             <input
-              type="text"
+              type="search"
+              enterKeyHint="search"
               placeholder="Search for items..."
               className={desktopSearchInputClasses}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(e);
+                }
+              }}
             />
           </form>
         </div>
