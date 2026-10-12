@@ -21,26 +21,40 @@ const Navbar = () => { // No longer receives theme and toggleTheme as props
   // Determine if current page is a login/register page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register' || location.pathname === '/forgot-password';
 
-  // Smart sticky scroll: hide on scroll down, show when scrolling back up a little
+  // Smart sticky scroll: hide on scroll down, show when scrolling back up
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
 
       // Always show near top of page
-      if (currentScrollY <= 60) {
+      if (currentScrollY <= 80) {
         setIsVisible(true);
-      } else if (isProfileSidebarOpen || isSearchOpen) {
-        // Keep visible if search or sidebar is active
-        setIsVisible(true);
-      } else if (currentScrollY < lastScrollY.current - 8) {
-        // Scrolled back up by 8px or more: reveal navbar
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY.current + 8) {
-        // Scrolled down by 8px or more: hide navbar
-        setIsVisible(false);
+        lastScrollY.current = currentScrollY;
+        return;
       }
 
-      lastScrollY.current = currentScrollY;
+      // Keep visible if search or sidebar is active
+      if (isProfileSidebarOpen || isSearchOpen) {
+        setIsVisible(true);
+        lastScrollY.current = currentScrollY;
+        return;
+      }
+
+      // Ignore rubber-band bounce past bottom of document on touch screens
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (currentScrollY > maxScroll) {
+        return;
+      }
+
+      // If scrolling UP by any amount, reveal navbar immediately
+      if (currentScrollY < lastScrollY.current) {
+        setIsVisible(true);
+        lastScrollY.current = currentScrollY;
+      } else if (currentScrollY > lastScrollY.current + 8) {
+        // If scrolling DOWN by more than threshold, hide navbar
+        setIsVisible(false);
+        lastScrollY.current = currentScrollY;
+      }
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

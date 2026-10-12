@@ -9,7 +9,7 @@ export const getNavbarClasses = (theme, isAuthPage, isSearchOpen, isProfileSideb
 
   return {
     // Main navigation bar container (Smart Sticky: hides on scroll down, reveals on scroll back up)
-    navClasses: `sticky top-0 z-30 flex items-center px-4 md:px-8 py-4 transition-all duration-300 ease-in-out gap-4 ${
+    navClasses: `sticky top-0 z-30 w-full flex items-center px-4 md:px-8 py-4 transition-all duration-300 ease-in-out gap-4 ${
       isAuthPage ? 'justify-center' : 'justify-between'
     } ${
       isDark
