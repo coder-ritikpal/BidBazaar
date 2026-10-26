@@ -52,6 +52,7 @@ const AuctionDetailsPage = () => {
   const [isBidding, setIsBidding] = useState(false);
   const [mainImage, setMainImage] = useState('');
   const [sellerDisplayName, setSellerDisplayName] = useState(null);
+  const [winnerDisplayName, setWinnerDisplayName] = useState(null);
   const [isFlashing, setIsFlashing] = useState(false); // New state for socket real-time flash
   // Use environment variable, fallback to production URL if in prod, otherwise localhost
   const SOCKET_URL = import.meta.env.VITE_API_URL_FEATURES || 
@@ -210,6 +211,48 @@ const AuctionDetailsPage = () => {
     };
   }, [auction]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const resolveWinnerName = async () => {
+      if (!auction || auction.status !== 'ended') {
+        if (isMounted) setWinnerDisplayName(null);
+        return;
+      }
+
+      if (auction.winnerId?.fullName) {
+        const name = `${auction.winnerId.fullName.firstName || ''} ${auction.winnerId.fullName.lastName || ''}`.trim();
+        if (isMounted) setWinnerDisplayName(name || null);
+        return;
+      }
+
+      const winnerId = auction.winnerId && typeof auction.winnerId === 'object'
+        ? (auction.winnerId._id || auction.winnerId.id)
+        : auction.winnerId;
+
+      if (!winnerId) {
+        if (isMounted) setWinnerDisplayName(null);
+        return;
+      }
+
+      try {
+        const response = await getUserPublicProfile(winnerId);
+        const fullName = response.data?.user?.fullName;
+        const name = fullName ? `${fullName.firstName || ''} ${fullName.lastName || ''}`.trim() : null;
+        if (isMounted) setWinnerDisplayName(name || null);
+      } catch (err) {
+        console.error('Failed to resolve winner name', err);
+        if (isMounted) setWinnerDisplayName(null);
+      }
+    };
+
+    resolveWinnerName();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [auction]);
+
   const currentUserId = String(user?._id || user?.id || '');
   const isHighestBidder = Boolean(
     isLoggedIn && currentUserId && bids.length > 0 && String(bids[0].bidderId) === currentUserId
@@ -272,10 +315,10 @@ const AuctionDetailsPage = () => {
 
   const sellerIdString =
     (auction.sellerId && typeof auction.sellerId === 'object' ? auction.sellerId._id : auction.sellerId) || null;
-  const isOwner = isLoggedIn && user && sellerIdString === user._id;
+  const isOwner = Boolean(isLoggedIn && currentUserId && sellerIdString && String(sellerIdString) === currentUserId);
   const winnerIdString =
     (auction.winnerId && typeof auction.winnerId === 'object' ? auction.winnerId._id : auction.winnerId) || null;
-  const isWinner = isLoggedIn && user && auction.status === 'ended' && !!winnerIdString && winnerIdString === user._id;
+  const isWinner = Boolean(isLoggedIn && currentUserId && auction.status === 'ended' && winnerIdString && String(winnerIdString) === currentUserId);
 
   const sellerName = sellerDisplayName
     ? sellerDisplayName
@@ -285,7 +328,9 @@ const AuctionDetailsPage = () => {
         ? `User ${String(sellerIdString).slice(-6)}`
         : 'Unknown seller';
 
-  const winnerName =
+  const winnerName = winnerDisplayName
+    ? winnerDisplayName
+    :
     auction.winnerId?.fullName
       ? `${auction.winnerId.fullName.firstName || ''} ${auction.winnerId.fullName.lastName || ''}`.trim()
       : winnerIdString ? `User ${String(winnerIdString).slice(-6)}` : null;
@@ -338,7 +383,7 @@ const AuctionDetailsPage = () => {
 
             <div className={classes.priceSection}>
               <div className="flex-1">
-                <p className={classes.priceLabel}>{auction.status === 'live' ? 'Current Bid' : 'Starting Price'}</p>
+                <p className={classes.priceLabel}>{auction.status === 'live' ? 'Current Bid' : auction.status === 'ended' ? 'Winning Bid' : 'Starting Price'}</p>
                 <p className={`${classes.priceValue} ${isFlashing ? 'text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] scale-110 transition-all duration-300' : 'transition-all duration-500'}`}>
                   Rs.{auction.currentPrice}
                 </p>
@@ -412,6 +457,11 @@ const AuctionDetailsPage = () => {
                   {winnerName ? (
                     <p className="mt-1">
                       Won by <strong>{winnerName}</strong> with a bid of Rs.{auction.currentPrice}.
+                    </p>
+
+                  ) : auction.bids && auction.bids.length > 0 ? (
+                    <p className="mt-1 text-amber-300">
+                      Finalizing winner... Please refresh in a moment.
                     </p>
                   ) : (
                     <p className="mt-1">This auction ended without a winner.</p>
