@@ -11,14 +11,13 @@ const bidSchema = new mongoose.Schema({
     ref: "user",
     required: true,
   },
-  bidderName: {
-    type: String,
-  },
   amount: {
     type: Number,
     required: true,
   },
 }, { timestamps: true });
+
+bidSchema.index({ auctionId: 1, createdAt: -1, _id: -1 });
 
 const bidModel = mongoose.model("bid", bidSchema);
 

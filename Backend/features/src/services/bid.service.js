@@ -1,14 +1,26 @@
 import mongoose from "mongoose";
+import { createHmac } from "node:crypto";
 import auctionModel from "../models/auction.model.js";
 import bidModel from "../models/bid.model.js";
 import { setNxCache } from "../cache/redis.js";
-import { getAuctionStatus, formatMaskedBidder } from "../utils/auction.utils.js";
+import config from "../config/config.js";
+import { getAuctionStatus } from "../utils/auction.utils.js";
+
+const publicBidderLabel = (auctionId, bidderId) => {
+  const secret = config.JWT_SECRET || config.INTERNAL_AUTH_TOKEN_SECRET;
+  if (!secret) throw new Error("Bidder label secret is not configured.");
+  const suffix = createHmac("sha256", secret)
+    .update(`${auctionId}:${bidderId}`)
+    .digest("hex")
+    .slice(0, 7);
+  return `Bidder ${suffix}`;
+};
 
 /**
  * Places a bid atomically on a live auction, enforces rate limits,
  * updates the auction, emits real-time WebSocket events, and queues notifications.
  */
-export const placeBid = async ({ auctionId, bidderId, amount, rawName, io }) => {
+export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
   if (!bidderId) {
     const error = new Error("Unauthorized. Please log in to bid.");
     error.statusCode = 401;
@@ -129,14 +141,11 @@ export const placeBid = async ({ auctionId, bidderId, amount, rawName, io }) => 
   }
 
   const bidId = new mongoose.Types.ObjectId();
-  const maskedBidderName = formatMaskedBidder(rawName);
-
   // 1. Create the bid document
   const newBid = new bidModel({
     _id: bidId,
     auctionId,
     bidderId,
-    bidderName: maskedBidderName,
     amount: numericAmount,
   });
   await newBid.save();
@@ -220,19 +229,13 @@ export const placeBid = async ({ auctionId, bidderId, amount, rawName, io }) => 
 
   // 3. Emit real-time WebSocket event
   if (io) {
-    const bidderIdStr = String(bidderId);
-    const bidderIndex = updatedAuction.uniqueBidders.findIndex(
-      (id) => String(id) === bidderIdStr,
-    );
-    const fallbackLabel = bidderIndex >= 0 ? `Bidder ${bidderIndex + 1}` : `Bidder ?`;
-    const bidderLabel = maskedBidderName || fallbackLabel;
+    const bidderLabel = publicBidderLabel(auctionId, bidderId);
 
     io.to(auctionId).emit("new_bid", {
       auctionId,
       currentPrice: updatedAuction.currentPrice,
       bid: {
         _id: newBid._id,
-        bidderId: newBid.bidderId,
         amount: newBid.amount,
         createdAt: newBid.createdAt,
         bidderLabel,
@@ -257,16 +260,19 @@ export const placeBid = async ({ auctionId, bidderId, amount, rawName, io }) => 
 /**
  * Fetches the bid history for an auction with formatted public labels.
  */
-export const getBidsForAuction = async ({ auctionId, viewingUserId }) => {
+export const getBidsForAuction = async ({ auctionId, viewingUserId, page = 1, limit = 50 }) => {
   if (!mongoose.Types.ObjectId.isValid(auctionId)) {
     const error = new Error("Invalid auction ID format.");
     error.statusCode = 400;
     throw error;
   }
 
-  const [auction, chronologicalBids] = await Promise.all([
-    auctionModel.findById(auctionId).select("uniqueBidders").lean(),
-    bidModel.find({ auctionId }).sort({ createdAt: 1, _id: 1 }),
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 50));
+  const [auction, bids, total] = await Promise.all([
+    auctionModel.findById(auctionId).select("_id").lean(),
+    bidModel.find({ auctionId }).sort({ createdAt: -1, _id: -1 }).skip((pageNumber - 1) * pageSize).limit(pageSize).lean(),
+    bidModel.countDocuments({ auctionId }),
   ]);
 
   if (!auction) {
@@ -275,36 +281,30 @@ export const getBidsForAuction = async ({ auctionId, viewingUserId }) => {
     throw error;
   }
 
-  const bidderOrder =
-    Array.isArray(auction.uniqueBidders) && auction.uniqueBidders.length > 0
-      ? auction.uniqueBidders
-      : chronologicalBids.reduce((ordered, bid) => {
-          const id = String(bid.bidderId);
-          if (!ordered.some((knownId) => String(knownId) === id)) ordered.push(bid.bidderId);
-          return ordered;
-        }, []);
-
-  const labelMap = new Map(bidderOrder.map((id, i) => [String(id), `Bidder ${i + 1}`]));
-
-  const publicBids = chronologicalBids
+  const publicBids = bids
     .map((bid) => {
       const bidBidderId = String(bid.bidderId);
       const isSelf = viewingUserId ? viewingUserId === bidBidderId : false;
-      const defaultLabel = labelMap.get(bidBidderId) ?? "Bidder ?";
-      const displayLabel = isSelf ? "You" : bid.bidderName || defaultLabel;
+      const displayLabel = isSelf ? "You" : publicBidderLabel(auctionId, bidBidderId);
 
       return {
         _id: bid._id,
         auctionId: bid.auctionId,
-        bidderId: bid.bidderId,
         amount: bid.amount,
         createdAt: bid.createdAt,
         isSelf,
         bidderLabel: displayLabel,
       };
-    })
-    .reverse();
+    });
 
-  return publicBids;
+  return {
+    bids: publicBids,
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
 };
 

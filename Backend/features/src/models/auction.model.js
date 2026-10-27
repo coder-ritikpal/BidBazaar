@@ -38,6 +38,8 @@ const auctionSchema = new mongoose.Schema({
   isEndedEventPublished: { type: Boolean, default: false },
 }, { timestamps: true });
 
+auctionSchema.index({ cancelledAt: 1, deleteAt: 1, createdAt: -1, _id: -1 });
+
 const auctionModel = mongoose.model("auction", auctionSchema);
 
 export default auctionModel;

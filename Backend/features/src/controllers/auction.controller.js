@@ -43,12 +43,13 @@ export const createAuction = async (req, res) => {
   }
 };
 
-export const getAuctions = async (_req, res) => {
+export const getAuctions = async (req, res) => {
   try {
-    const { cached, auctions } = await auctionService.getAuctions();
+    const { cached, auctions, pagination } = await auctionService.getAuctions(req.query);
     return res.status(200).json({
       message: cached ? "Auctions fetched successfully (cached)" : "Auctions fetched successfully",
       auctions,
+      pagination,
     });
   } catch (error) {
     return res.status(500).json({
@@ -115,13 +116,19 @@ export const auctionBid = async (req, res) => {
       auctionId: req.params.auctionId,
       bidderId: req.user?.id,
       amount: req.body.amount,
-      rawName: req.body?.bidderName || req.body?.fullName || "",
       io,
     });
 
     return res.status(201).json({
       message: "Bid placed successfully.",
-      bid: newBid,
+      bid: {
+        _id: newBid._id,
+        auctionId: newBid.auctionId,
+        amount: newBid.amount,
+        createdAt: newBid.createdAt,
+        bidderLabel: "You",
+        isSelf: true,
+      },
     });
   } catch (error) {
     if (error.statusCode) {
@@ -138,11 +145,14 @@ export const getBidsForAuction = async (req, res) => {
     const bids = await bidService.getBidsForAuction({
       auctionId: req.params.auctionId,
       viewingUserId,
+      page: req.query.page,
+      limit: req.query.limit,
     });
 
     return res.status(200).json({
       message: "Bids fetched successfully.",
-      bids,
+      bids: bids.bids,
+      pagination: bids.pagination,
     });
   } catch (error) {
     if (error.statusCode) {

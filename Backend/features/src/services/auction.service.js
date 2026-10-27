@@ -251,28 +251,45 @@ export const createAuction = async (body) => {
 /**
  * Fetches all active auctions, cached in Redis for 15s.
  */
-export const getAuctions = async () => {
-  const cachedAuctions = await getCache("all_auctions");
+export const getAuctions = async ({ page = 1, limit = 50 } = {}) => {
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 50));
+  const cacheKey = `all_auctions:${pageNumber}:${pageSize}`;
+  const cachedAuctions = await getCache(cacheKey);
   if (cachedAuctions) {
-    return { cached: true, auctions: cachedAuctions };
+    return { cached: true, ...cachedAuctions };
   }
 
   const now = new Date();
-  const auctions = await auctionModel
-    .find({
-      $and: [
-        { cancelledAt: null },
-        {
-          $or: [{ deleteAt: null }, { deleteAt: { $gt: now } }],
-        },
-      ],
-    })
-    .sort({ createdAt: -1 });
+  const filter = {
+    $and: [
+      { cancelledAt: null },
+      {
+        $or: [{ deleteAt: null }, { deleteAt: { $gt: now } }],
+      },
+    ],
+  };
+  const [auctions, total] = await Promise.all([
+    auctionModel.find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize),
+    auctionModel.countDocuments(filter),
+  ]);
 
   const processedAuctions = await Promise.all(auctions.map(toAuctionResponse));
-  await setCache("all_auctions", processedAuctions, 15);
+  const result = {
+    auctions: processedAuctions,
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
+  await setCache(cacheKey, result, 15);
 
-  return { cached: false, auctions: processedAuctions };
+  return { cached: false, ...result };
 };
 
 /**
