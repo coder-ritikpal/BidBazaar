@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import wishlistModel from "../models/wishlist.model.js";
 import { fetchAuctionSnapshot } from "../utils/proxy.utils.js";
 
@@ -25,32 +26,27 @@ export const getWishlist = async (userId) => {
 /**
  * Adds an auction to the user's wishlist, taking a fresh snapshot.
  */
-export const addToWishlist = async ({ userId, auctionId, clientSnapshot }) => {
+export const addToWishlist = async ({ userId, auctionId }) => {
   if (!userId) {
     const error = new Error("Unauthorized. Please log in.");
     error.statusCode = 401;
     throw error;
   }
 
-  if (!auctionId) {
-    const error = new Error("auctionId is required");
+  if (!mongoose.Types.ObjectId.isValid(auctionId)) {
+    const error = new Error("A valid auctionId is required.");
     error.statusCode = 400;
     throw error;
   }
 
-  let snapshot = await fetchAuctionSnapshot(auctionId);
-
-  // Fallback to client snapshot if features service is cold starting
-  if (!snapshot && clientSnapshot) {
-    snapshot = {
-      title: clientSnapshot.title || "",
-      images: clientSnapshot.images || [],
-      image: clientSnapshot.image || clientSnapshot.images?.[0]?.url || "",
-      currentBid: clientSnapshot.currentBid ?? clientSnapshot.currentPrice ?? 0,
-      startingBid: clientSnapshot.startingBid ?? clientSnapshot.price ?? 0,
-      price: clientSnapshot.price ?? 0,
-      status: clientSnapshot.status || "live",
-    };
+  let snapshot;
+  try {
+    snapshot = await fetchAuctionSnapshot(auctionId);
+  } catch (cause) {
+    const error = new Error("Auction service is unavailable. Please try again.");
+    error.statusCode = 503;
+    error.cause = cause;
+    throw error;
   }
 
   if (!snapshot) {

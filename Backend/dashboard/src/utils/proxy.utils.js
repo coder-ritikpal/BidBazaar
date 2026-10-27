@@ -59,7 +59,10 @@ export const fetchWithColdStartRetry = async (url, options) => {
 export const fetchAuctionSnapshot = async (auctionId) => {
   const url = new URL(`/api/auctions/${auctionId}`, config.AUCTIONS_SERVICE_URL);
   const response = await fetchWithColdStartRetry(url, { method: "GET" });
-  if (!response.ok) return null;
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    throw new Error(`Auction service returned HTTP ${response.status}.`);
+  }
 
   const data = await response.json().catch(() => null);
   const auction = data?.auction || data;

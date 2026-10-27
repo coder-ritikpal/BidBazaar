@@ -36,13 +36,12 @@ export const getWishlist = async (req, res) => {
 
 export const addToWishlist = async (req, res) => {
   const userId = req.user?.id;
-  const { auctionId, snapshot: clientSnapshot } = req.body || {};
+  const { auctionId } = req.body || {};
 
   try {
     const result = await wishlistService.addToWishlist({
       userId,
       auctionId,
-      clientSnapshot,
     });
 
     if (result.isDuplicate) {
@@ -81,6 +80,9 @@ export const removeFromWishlist = async (req, res) => {
 export const getAllAuctions = async (req, res) => {
   try {
     const url = new URL("/api/auctions", config.AUCTIONS_SERVICE_URL);
+    for (const [key, value] of Object.entries(req.query || {})) {
+      url.searchParams.set(key, value);
+    }
     const data = await forwardPublicRequest(req, url);
     return res.status(200).json(data);
   } catch (error) {
@@ -123,6 +125,9 @@ export const getAuctionBidsBFF = async (req, res) => {
   try {
     const { auctionId } = req.params;
     const url = new URL(`/api/auctions/${auctionId}/bids`, config.AUCTIONS_SERVICE_URL);
+    for (const [key, value] of Object.entries(req.query || {})) {
+      url.searchParams.set(key, value);
+    }
     const data = await forwardPublicRequest(req, url);
     return res.status(200).json(data);
   } catch (error) {
