@@ -47,6 +47,8 @@ const AuctionDetailsPage = () => {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, isOver: true });
   const [bidAmount, setBidAmount] = useState('');
   const [bids, setBids] = useState([]);
+  const [bidPagination, setBidPagination] = useState({ page: 1, limit: 50, total: 0, totalPages: 0 });
+  const [bidPage, setBidPage] = useState(1);
   const [loadingBids, setLoadingBids] = useState(true);
   const [showAllBids, setShowAllBids] = useState(false); // New state to control bid history display
   const [isBidding, setIsBidding] = useState(false);
@@ -78,14 +80,20 @@ const AuctionDetailsPage = () => {
     if (!auctionId) return;
     setLoadingBids(true);
     try {
-      const response = await getAuctionBids(auctionId);
+      const response = await getAuctionBids(auctionId, bidPage);
       setBids(response.data.bids || []);
+      setBidPagination(response.data.pagination || { page: bidPage, limit: 50, total: 0, totalPages: 0 });
     } catch (err) {
       // Don't show a toast for this, as it's not critical for page load.
       console.error('Failed to load bid history.', err);
     } finally {
       setLoadingBids(false);
     }
+  }, [auctionId, bidPage]);
+
+  useEffect(() => {
+    setBidPage(1);
+    setShowAllBids(false);
   }, [auctionId]);
 
   useEffect(() => {
@@ -107,9 +115,6 @@ const AuctionDetailsPage = () => {
 
     socket.on('new_bid', (data) => {
       if (data.auctionId === auctionId) {
-        const activeUserId = String(user?._id || user?.id || '');
-        const isFromCurrentViewer = Boolean(activeUserId && data.bid?.bidderId && String(data.bid.bidderId) === activeUserId);
-
         // Update auction price and trigger visual flash
         setAuction(prevAuction => {
           if (!prevAuction) return prevAuction;
@@ -129,8 +134,8 @@ const AuctionDetailsPage = () => {
         // Add new bid to the top of the history without duplicates
         const formattedBid = {
           ...data.bid,
-          isSelf: isFromCurrentViewer,
-          bidderLabel: isFromCurrentViewer ? 'You' : (data.bid.bidderLabel || 'Bidder'),
+          isSelf: false,
+          bidderLabel: data.bid.bidderLabel || 'Bidder',
         };
 
         setBids(prevBids => {
@@ -140,9 +145,20 @@ const AuctionDetailsPage = () => {
           return [formattedBid, ...prevBids];
         });
 
-        if (!isFromCurrentViewer) {
-          toast.info(`New bid of Rs.${data.bid.amount} placed by ${formattedBid.bidderLabel}!`);
-        }
+        // The history endpoint applies the viewer-specific "You" label without
+        // sending bidder IDs over the public socket event.
+        getAuctionBids(auctionId)
+          .then((response) => {
+            const refreshedBids = response.data.bids || [];
+            setBidPage(1);
+            setBids(refreshedBids);
+            setBidPagination(response.data.pagination || { page: 1, limit: 50, total: 0, totalPages: 0 });
+            const latestBid = refreshedBids.find((bid) => String(bid._id) === String(data.bid?._id));
+            if (latestBid && !latestBid.isSelf) {
+              toast.info(`New bid of Rs.${latestBid.amount} placed by ${latestBid.bidderLabel}!`);
+            }
+          })
+          .catch((err) => console.error('Failed to refresh bid history after a new bid.', err));
       }
     });
 
@@ -153,7 +169,7 @@ const AuctionDetailsPage = () => {
     return () => {
       socket.disconnect();
     };
-  }, [auctionId, SOCKET_URL, user]);
+  }, [auctionId, SOCKET_URL]);
 
   useEffect(() => {
     if (!auction || (auction.status !== 'live' && auction.status !== 'upcoming')) return;
@@ -255,7 +271,7 @@ const AuctionDetailsPage = () => {
 
   const currentUserId = String(user?._id || user?.id || '');
   const isHighestBidder = Boolean(
-    isLoggedIn && currentUserId && bids.length > 0 && String(bids[0].bidderId) === currentUserId
+    isLoggedIn && currentUserId && bids.length > 0 && bids[0].isSelf
   );
 
   const handleBidSubmit = async (e) => {
@@ -282,13 +298,9 @@ const AuctionDetailsPage = () => {
       return;
     }
 
-    const userFullName = user?.fullName
-      ? `${user.fullName.firstName || ''} ${user.fullName.lastName || ''}`.trim()
-      : (user?.name || '');
-
     setIsBidding(true);
     try {
-      await bidOnAuction(auctionId, bidValue, userFullName);
+      await bidOnAuction(auctionId, bidValue);
       toast.success('Bid placed successfully!');
       setBidAmount('');
       // Instantly refresh auction details and bid history so this tab updates without delay
@@ -527,7 +539,7 @@ const AuctionDetailsPage = () => {
                   {(showAllBids ? bids : bids.slice(0, 3)).map((bid, index) => {
                     // Check if this bid is the highest (most recent) among the displayed ones
                     const isHighestBid = index === 0;
-                    const isUserOwnBid = Boolean(bid.isSelf || (currentUserId && bid.bidderId && String(bid.bidderId) === currentUserId));
+                    const isUserOwnBid = Boolean(bid.isSelf);
                     const label = isUserOwnBid ? 'You' : (bid.bidderLabel || 'Bidder');
                     return (
                       <li key={bid._id || `${index}-${bid.amount}`} className={`${classes.bidItem} ${isHighestBid ? classes.highestBidItem : ''}`}>
@@ -551,10 +563,37 @@ const AuctionDetailsPage = () => {
               ) : (
                 <p className={classes.bidHistoryMessage}>No bids have been placed yet. Be the first!</p>
               )}
-              {bids.length > 3 && (
-                <button onClick={() => setShowAllBids(!showAllBids)} className={classes.viewAllBidsButton}>
-                  {showAllBids ? 'Show Less' : `See All ${bids.length} Bids`}
+              {bidPagination.total > 3 && (
+                <button
+                  onClick={() => {
+                    setShowAllBids(!showAllBids);
+                    if (showAllBids) setBidPage(1);
+                  }}
+                  className={classes.viewAllBidsButton}
+                >
+                  {showAllBids ? 'Show Less' : `See All ${bidPagination.total} Bids`}
                 </button>
+              )}
+              {showAllBids && bidPagination.totalPages > 1 && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    disabled={bidPage <= 1}
+                    onClick={() => setBidPage((current) => Math.max(1, current - 1))}
+                    className="rounded border px-3 py-1 disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span>Page {bidPagination.page} of {bidPagination.totalPages}</span>
+                  <button
+                    type="button"
+                    disabled={bidPage >= bidPagination.totalPages}
+                    onClick={() => setBidPage((current) => Math.min(bidPagination.totalPages, current + 1))}
+                    className="rounded border px-3 py-1 disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
               )}
             </div>
 

@@ -43,8 +43,8 @@ export const getWonAuctions = async () => {
 // --- Other API Calls (example, adjust as needed) ---
 
 // Example for fetching auctions (if not handled by dashboard BFF directly)
-export const getAuctions = async () => {
-  return api.get(`/dashboard/auctions`); // Assuming dashboard BFF proxies this
+export const getAuctions = async (page = 1, limit = 50) => {
+  return api.get(`/dashboard/auctions`, { params: { page, limit } });
 };
 
 // --- Auction Details API Calls (proxied through Dashboard BFF) ---
@@ -53,12 +53,12 @@ export const getAuctionDetails = async (auctionId) => {
   return api.get(`/dashboard/auctions/${auctionId}`);
 };
 
-export const getAuctionBids = async (auctionId) => {
-  return api.get(`/dashboard/auctions/${auctionId}/bids`);
+export const getAuctionBids = async (auctionId, page = 1, limit = 50) => {
+  return api.get(`/dashboard/auctions/${auctionId}/bids`, { params: { page, limit } });
 };
 
-export const bidOnAuction = async (auctionId, amount, bidderName) => {
-  return api.post(`/dashboard/auctions/${auctionId}/bid`, { amount, bidderName });
+export const bidOnAuction = async (auctionId, amount) => {
+  return api.post(`/dashboard/auctions/${auctionId}/bid`, { amount });
 };
 
 export const getUserPublicProfile = async (userId) => {
