@@ -68,10 +68,10 @@ describe('POST /api/payments/verify', () => {
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
-  test('returns 500 when internal order id is missing', async () => {
+  test('rejects verification when internal order id is missing', async () => {
     const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send({ ...body(), internal_order_id: undefined });
-    expect(res.status).toBe(500);
-    expect(res.body.message).toMatch(/internal error occurred/);
+    expect(res.status).toBe(400);
+    expect(res.body.message).toMatch(/internal order ID is missing/i);
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

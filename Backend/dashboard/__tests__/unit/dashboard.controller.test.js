@@ -1,4 +1,5 @@
 import { jest } from "@jest/globals";
+import mongoose from "mongoose";
 
 const wishlistModel = {
   find: jest.fn(),
@@ -63,11 +64,12 @@ describe("dashboard controller", () => {
     await addToWishlist({ user: { id: "user-1" }, body: {} }, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ message: "auctionId is required" });
+    expect(res.json).toHaveBeenCalledWith({ message: "A valid auctionId is required." });
     expect(wishlistModel.create).not.toHaveBeenCalled();
   });
 
   test("addToWishlist stores the normalized auction snapshot", async () => {
+    const auctionId = new mongoose.Types.ObjectId();
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({
@@ -85,15 +87,15 @@ describe("dashboard controller", () => {
     });
     const res = makeResponse();
 
-    await addToWishlist({ user: { id: "user-1" }, body: { auctionId: "auction-1" } }, res);
+    await addToWishlist({ user: { id: "user-1" }, body: { auctionId: String(auctionId) } }, res);
 
     expect(global.fetch).toHaveBeenCalledWith(
-      expect.objectContaining({ href: "http://localhost:3002/api/auctions/auction-1" }),
+      expect.objectContaining({ href: `http://localhost:3002/api/auctions/${auctionId}` }),
       { method: "GET" },
     );
     expect(wishlistModel.create).toHaveBeenCalledWith({
       userId: "user-1",
-      auctionId: "auction-1",
+      auctionId: String(auctionId),
       snapshot: expect.objectContaining({
         title: "Camera",
         image: "camera.jpg",
@@ -105,14 +107,15 @@ describe("dashboard controller", () => {
   });
 
   test("addToWishlist translates duplicate database errors", async () => {
+    const auctionId = new mongoose.Types.ObjectId();
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
-      json: jest.fn().mockResolvedValue({ title: "Camera" }),
+      json: jest.fn().mockResolvedValue({ auction: { title: "Camera" } }),
     });
     wishlistModel.create.mockRejectedValue({ code: 11000 });
     const res = makeResponse();
 
-    await addToWishlist({ user: { id: "user-1" }, body: { auctionId: "auction-1" } }, res);
+    await addToWishlist({ user: { id: "user-1" }, body: { auctionId: String(auctionId) } }, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith({ message: "Item already in wishlist" });

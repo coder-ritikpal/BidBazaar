@@ -138,9 +138,9 @@ describe('Payment API E2E', () => {
       expect(res.body).not.toHaveProperty('verificationError');
     });
 
-    test('returns 500 when the internal order id is missing', async () => {
+    test('rejects verification when the internal order id is missing', async () => {
       const res = await request(app).post('/api/payments/verify').set('Authorization', `Bearer ${token}`).send({ ...body(), internal_order_id: undefined });
-      expect(res.status).toBe(500);
+      expect(res.status).toBe(400);
       expect(mockFetch).not.toHaveBeenCalled();
     });
   });

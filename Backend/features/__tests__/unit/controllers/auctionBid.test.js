@@ -151,7 +151,7 @@ describe("auctionBid", () => {
     expect(mockEmit).toHaveBeenCalledWith("new_bid", {
       auctionId,
       currentPrice: 1500,
-      bid: expect.objectContaining({ bidderLabel: "Bidder 1", amount: 1500 }),
+      bid: expect.objectContaining({ bidderLabel: expect.stringMatching(/^Bidder [a-f0-9]{7}$/), amount: 1500 }),
     });
   });
 
@@ -191,7 +191,7 @@ describe("auctionBid", () => {
       ],
     });
     expect(mockEmit).toHaveBeenCalledWith("new_bid", expect.objectContaining({
-      bid: expect.objectContaining({ bidderLabel: "Bidder 3" }),
+      bid: expect.objectContaining({ bidderLabel: expect.stringMatching(/^Bidder [a-f0-9]{7}$/) }),
     }));
   });
 

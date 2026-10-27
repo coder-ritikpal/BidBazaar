@@ -65,7 +65,7 @@ describe("Dashboard BFF", () => {
       .send({});
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ message: "auctionId is required" });
+    expect(res.body).toEqual({ message: "A valid auctionId is required." });
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

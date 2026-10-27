@@ -1,11 +1,15 @@
 import { jest } from "@jest/globals";
 
 const sortMock = jest.fn();
+const skipMock = jest.fn();
+const limitMock = jest.fn();
 const findMock = jest.fn();
+const countDocumentsMock = jest.fn();
 
 jest.unstable_mockModule("../../../src/models/auction.model.js", () => ({
   default: {
     find: findMock,
+    countDocuments: countDocumentsMock,
   },
 }));
 
@@ -61,6 +65,9 @@ describe("getAuctions", () => {
     findMock.mockReturnValue({
       sort: sortMock,
     });
+    sortMock.mockReturnValue({ skip: skipMock });
+    skipMock.mockReturnValue({ limit: limitMock });
+    countDocumentsMock.mockResolvedValue(0);
   });
 
   it("should return all auctions", async () => {
@@ -101,7 +108,8 @@ describe("getAuctions", () => {
       },
     ];
 
-    sortMock.mockResolvedValue(auctions);
+    limitMock.mockResolvedValue(auctions);
+    countDocumentsMock.mockResolvedValue(2);
 
     await getAuctions({}, res);
 
@@ -116,6 +124,7 @@ describe("getAuctions", () => {
 
     expect(sortMock).toHaveBeenCalledWith({
       createdAt: -1,
+      _id: -1,
     });
 
     expect(res.status).toHaveBeenCalledWith(200);
@@ -132,20 +141,21 @@ describe("getAuctions", () => {
   });
 
   it("should return empty array when no auctions exist", async () => {
-    sortMock.mockResolvedValue([]);
+    limitMock.mockResolvedValue([]);
 
     await getAuctions({}, res);
 
     expect(res.status).toHaveBeenCalledWith(200);
 
-    expect(res.json).toHaveBeenCalledWith({
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       message: "Auctions fetched successfully",
       auctions: [],
-    });
+      pagination: { page: 1, limit: 50, total: 0, totalPages: 0 },
+    }));
   });
 
   it("should return 500 if database throws error", async () => {
-    sortMock.mockRejectedValue(new Error("Database Error"));
+    limitMock.mockRejectedValue(new Error("Database Error"));
 
     await getAuctions({}, res);
 
@@ -157,12 +167,13 @@ describe("getAuctions", () => {
   });
 
   it("should return auctions in descending order", async () => {
-    sortMock.mockResolvedValue([]);
+    limitMock.mockResolvedValue([]);
 
     await getAuctions({}, res);
 
     expect(sortMock).toHaveBeenCalledWith({
       createdAt: -1,
+      _id: -1,
     });
   });
 });

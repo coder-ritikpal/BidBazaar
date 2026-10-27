@@ -147,7 +147,7 @@ describe("createAuction", () => {
 
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        message: "Failed to create auction",
+        message: "Auction duration must be at least 5 minutes.",
       }),
     );
   });

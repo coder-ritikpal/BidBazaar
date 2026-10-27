@@ -152,9 +152,20 @@ describe("getAuctionById", () => {
       endAuctionAt: null,
       winnerId: null, // Winner not yet set
       deleteAt: null, // deleteAt not yet set
+      bids: ["winning-bid-id"],
       toObject: jest.fn().mockReturnThis(),
       save: jest.fn().mockResolvedValue(true),
       constructor: {
+        findById: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue({
+              winnerId: "winner123",
+              winningBidId: "winbid123",
+              currentPrice: 100,
+              bids: ["winning-bid-id"],
+            }),
+          }),
+        }),
         findOneAndUpdate: jest.fn().mockResolvedValue({
           _id: req.params.auctionId,
           winnerId: "winner123",
@@ -177,11 +188,11 @@ describe("getAuctionById", () => {
     await getAuctionById(req, res);
 
     expect(findByIdMock).toHaveBeenCalledWith(req.params.auctionId);
-    expect(endedAuction.save).not.toHaveBeenCalled();
+    expect(endedAuction.save).toHaveBeenCalledTimes(1);
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
-        auction: expect.objectContaining({ status: "ended" }),
+        auction: expect.objectContaining({ status: "ended", winnerId: "winner123" }),
       })
     );
   });

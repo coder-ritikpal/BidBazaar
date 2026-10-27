@@ -6,12 +6,16 @@ const findByIdMock = jest.fn();
 const findOneMock = jest.fn();
 const createMock = jest.fn();
 const saveMock = jest.fn();
+const findAuctionsMock = jest.fn();
+const countAuctionsMock = jest.fn();
 
 jest.unstable_mockModule("../../src/models/auction.model.js", () => ({
   default: {
     findById: findByIdMock,
     findOne: findOneMock,
     create: createMock,
+    find: findAuctionsMock,
+    countDocuments: countAuctionsMock,
   },
 }));
 
@@ -107,15 +111,11 @@ describe("Auction API Integration", () => {
 
   describe("GET /api/auctions", () => {
     it("should return auctions", async () => {
-      const sortMock = jest.fn().mockResolvedValue([liveAuction]);
-
-      const findMock = jest.fn().mockReturnValue({
-        sort: sortMock,
-      });
-
-      const auctionModel = await import("../../src/models/auction.model.js");
-
-      auctionModel.default.find = findMock;
+      const limitMock = jest.fn().mockResolvedValue([liveAuction]);
+      const skipMock = jest.fn().mockReturnValue({ limit: limitMock });
+      const sortMock = jest.fn().mockReturnValue({ skip: skipMock });
+      findAuctionsMock.mockReturnValue({ sort: sortMock });
+      countAuctionsMock.mockResolvedValue(1);
 
       const response = await request(app)
         .get("/api/auctions")
