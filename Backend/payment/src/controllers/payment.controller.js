@@ -32,7 +32,7 @@ export const verifyPayment = async (req, res) => {
       internalOrderId: internal_order_id,
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
-      razorpaySignature,
+      razorpaySignature: razorpay_signature,
       userId,
     });
 
