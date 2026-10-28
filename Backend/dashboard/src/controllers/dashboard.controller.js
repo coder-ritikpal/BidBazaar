@@ -299,7 +299,10 @@ export const registerUserBFF = async (req, res) => {
     const url = new URL("/api/auth/register", config.AUTH_SERVICE_URL);
     const authResponse = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": req.ip || req.connection?.remoteAddress || "127.0.0.1",
+      },
       body: JSON.stringify(req.body),
     });
 
@@ -324,7 +327,10 @@ export const loginUserBFF = async (req, res) => {
     const url = new URL("/api/auth/login", config.AUTH_SERVICE_URL);
     const authResponse = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": req.ip || req.connection?.remoteAddress || "127.0.0.1",
+      },
       body: JSON.stringify(req.body),
     });
 
@@ -372,7 +378,10 @@ export const exchangeGoogleCodeBFF = async (req, res) => {
     const url = new URL("/api/auth/google/exchange", config.AUTH_SERVICE_URL);
     const authResponse = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": req.ip || req.connection?.remoteAddress || "127.0.0.1",
+      },
       body: JSON.stringify(req.body),
     });
 

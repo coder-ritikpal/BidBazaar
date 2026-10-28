@@ -12,6 +12,12 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
+// Trust the first proxy (Dashboard BFF / Render's reverse proxy) so that
+// req.ip resolves to the real client IP from the X-Forwarded-For header.
+// Without this, express-rate-limit sees the BFF's IP for every request,
+// causing all users to share a single rate-limit bucket.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 
 const isTest =

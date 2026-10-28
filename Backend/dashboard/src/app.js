@@ -9,6 +9,9 @@ import config from "./config/config.js";
 
 const app = express();
 
+// Trust Render's reverse proxy so req.ip reflects the real client IP.
+app.set("trust proxy", 1);
+
 // Security headers — must be first
 app.use(helmet());
 

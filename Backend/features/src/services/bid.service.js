@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import { createHmac } from "node:crypto";
 import auctionModel from "../models/auction.model.js";
 import bidModel from "../models/bid.model.js";
-import { setNxCache } from "../cache/redis.js";
+import { setNxCache, clearCache } from "../cache/redis.js";
 import config from "../config/config.js";
 import { getAuctionStatus } from "../utils/auction.utils.js";
 
@@ -72,10 +72,10 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
     throw error;
   }
 
-  // Prevent highest bidder from bidding against themselves
+  // Prevent highest bidder from bidding against themselves — must wait for someone else to outbid them
   const latestBid = await bidModel.findOne({ auctionId }, null, { sort: { createdAt: -1 } });
   if (latestBid && String(latestBid.bidderId) === String(bidderId)) {
-    const error = new Error("You are already the highest bidder. You cannot bid against yourself.");
+    const error = new Error("You are already the highest bidder. You must wait until another user outbids you.");
     error.statusCode = 400;
     throw error;
   }
@@ -121,20 +121,27 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
     }
   }
 
-  // Rate limiting: allow only one bid per minute per user
-  const rateLimitKey = `rate_limit:bid:${bidderId}`;
-  const lockAcquired = await setNxCache(rateLimitKey, true, 60);
+  // Rate limiting: enforce a 30-second cooldown between bids on the same auction by the same user.
+  // Even if outbid immediately, the user must wait at least 30 seconds from their previous bid.
+  const BID_COOLDOWN_SECONDS = 10;
+  const rateLimitKey = `rate_limit:bid:${auctionId}:${bidderId}`;
+  const lockAcquired = await setNxCache(rateLimitKey, true, BID_COOLDOWN_SECONDS);
 
   if (!lockAcquired) {
-    const oneMinuteAgo = new Date(Date.now() - 60 * 1000);
-    const recentBid = await bidModel.findOne({
-      bidderId,
-      createdAt: { $gte: oneMinuteAgo },
-    });
+    const cooldownAgo = new Date(Date.now() - BID_COOLDOWN_SECONDS * 1000);
+    const recentBid = await bidModel.findOne(
+      {
+        auctionId,
+        bidderId,
+        createdAt: { $gte: cooldownAgo },
+      },
+      null,
+      { sort: { createdAt: -1 } }
+    );
 
     if (recentBid) {
-      const waitSeconds = Math.ceil((recentBid.createdAt.getTime() + 60 * 1000 - Date.now()) / 1000);
-      const error = new Error(`You are bidding too fast! Please wait ${waitSeconds} seconds before placing another bid.`);
+      const waitSeconds = Math.max(1, Math.ceil((recentBid.createdAt.getTime() + BID_COOLDOWN_SECONDS * 1000 - Date.now()) / 1000));
+      const error = new Error(`You must wait at least 10 seconds between bids on this auction. Please wait ${waitSeconds}s before placing another bid.`);
       error.statusCode = 429;
       throw error;
     }
@@ -219,7 +226,8 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
   );
 
   if (!updatedAuction) {
-    // Rollback bid if price increased in race condition
+    // Release cooldown lock and rollback bid if price increased in race condition
+    await clearCache(rateLimitKey);
     await bidModel.findByIdAndDelete(bidId);
     const currentAuction = await auctionModel.findById(auctionId);
     const error = new Error(`Bid rejected. The current price has increased to Rs.${currentAuction?.currentPrice || auction.currentPrice}.`);

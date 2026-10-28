@@ -1,5 +1,12 @@
 import config from "../config/config.js";
 
+/**
+ * Returns the real client IP to forward downstream via X-Forwarded-For.
+ * This ensures downstream rate limiters (e.g. Auth's authLimiter) can
+ * distinguish individual users instead of seeing the BFF's single IP.
+ */
+const getClientIp = (req) => req.ip || req.connection?.remoteAddress || "127.0.0.1";
+
 export const toPublicError = (error) => {
   const statusCode = error.statusCode || 500;
   const upstream = error.data;
@@ -86,6 +93,7 @@ export const forwardPublicRequest = async (req, url) => {
 
   const headers = {
     "Content-Type": "application/json",
+    "X-Forwarded-For": getClientIp(req),
   };
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -144,6 +152,7 @@ export const forwardRequest = async (req, url) => {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
+      "X-Forwarded-For": getClientIp(req),
     },
     ...(req.method !== "GET" && req.method !== "HEAD" && { body: JSON.stringify(req.body) }),
   });
@@ -207,6 +216,7 @@ export const forwardMultipartRequest = async (req, url) => {
     method: req.method,
     headers: {
       Authorization: `Bearer ${token}`,
+      "X-Forwarded-For": getClientIp(req),
     },
     body: formData,
   });
