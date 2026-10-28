@@ -283,7 +283,7 @@ const AuctionDetailsPage = () => {
     }
 
     if (isHighestBidder) {
-      toast.info('You are already the highest bidder. You cannot bid against yourself.');
+      toast.info('You are already the highest bidder. You must wait until another user outbids you.');
       return;
     }
 
