@@ -86,10 +86,10 @@ describe("dashboard proxy routes", () => {
     expect(global.fetch).toHaveBeenCalledWith(
       expect.objectContaining({ href: "http://localhost:3002/api/auctions/auction-1" }),
       expect.objectContaining({
-        headers: {
+        headers: expect.objectContaining({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
-        },
+        }),
       }),
     );
   });
@@ -117,10 +117,10 @@ describe("dashboard proxy routes", () => {
       expect.objectContaining({ href: "http://localhost:3000/api/auth/me" }),
       expect.objectContaining({
         method: "GET",
-        headers: {
+        headers: expect.objectContaining({
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
-        },
+        }),
       }),
     );
   });

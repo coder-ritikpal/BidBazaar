@@ -58,6 +58,62 @@ describe("dashboard controller", () => {
     });
   });
 
+  test("getWishlist updates stale auction snapshots on read with live price and status", async () => {
+    const auctionId = new mongoose.Types.ObjectId();
+    const items = [
+      {
+        _id: "item-1",
+        auctionId,
+        snapshot: { title: "Item 1", currentBid: 500, status: "live" },
+      },
+    ];
+    const lean = jest.fn().mockResolvedValue(items);
+    const sort = jest.fn().mockReturnValue({ lean });
+    wishlistModel.find.mockReturnValue({ sort });
+    wishlistModel.bulkWrite = jest.fn().mockResolvedValue({});
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        auction: {
+          title: "Item 1",
+          currentPrice: 850,
+          currentBid: 850,
+          status: "ended",
+        },
+      }),
+    });
+
+    const res = makeResponse();
+    await getWishlist({ user: { id: "user-1" } }, res);
+
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      message: "Wishlist fetched successfully.",
+      wishlist: [
+        expect.objectContaining({
+          _id: String(auctionId),
+          title: "Item 1",
+          currentBid: 850,
+          status: "ended",
+        }),
+      ],
+    });
+    expect(wishlistModel.bulkWrite).toHaveBeenCalledWith([
+      expect.objectContaining({
+        updateOne: expect.objectContaining({
+          filter: { _id: "item-1" },
+          update: expect.objectContaining({
+            $set: expect.objectContaining({
+              snapshot: expect.objectContaining({ currentBid: 850, status: "ended" }),
+            }),
+          }),
+        }),
+      }),
+    ]);
+  });
+
   test("addToWishlist rejects a missing auction id", async () => {
     const res = makeResponse();
 

@@ -3,7 +3,8 @@ import wishlistModel from "../models/wishlist.model.js";
 import { fetchAuctionSnapshot } from "../utils/proxy.utils.js";
 
 /**
- * Fetches the user's wishlist items.
+ * Fetches the user's wishlist items with live populated auction prices and status.
+ * Updates snapshots on read to prevent data stagnation.
  */
 export const getWishlist = async (userId) => {
   if (!userId) {
@@ -17,10 +18,48 @@ export const getWishlist = async (userId) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  return items.map((item) => ({
-    _id: String(item.auctionId),
-    ...item.snapshot,
-  }));
+  if (!items || items.length === 0) {
+    return [];
+  }
+
+  const updates = [];
+  const wishlist = await Promise.all(
+    items.map(async (item) => {
+      try {
+        const liveSnapshot = await fetchAuctionSnapshot(item.auctionId);
+        if (liveSnapshot) {
+          if (item._id) {
+            updates.push({
+              updateOne: {
+                filter: { _id: item._id },
+                update: { $set: { snapshot: liveSnapshot } },
+              },
+            });
+          }
+          return {
+            _id: String(item.auctionId),
+            ...item.snapshot,
+            ...liveSnapshot,
+          };
+        }
+      } catch (err) {
+        // Fallback to stored snapshot if live auction fetch fails
+      }
+
+      return {
+        _id: String(item.auctionId),
+        ...item.snapshot,
+      };
+    })
+  );
+
+  if (updates.length > 0 && typeof wishlistModel.bulkWrite === "function") {
+    wishlistModel.bulkWrite(updates).catch((err) =>
+      console.error("Failed to update wishlist snapshots on read:", err.message)
+    );
+  }
+
+  return wishlist;
 };
 
 /**
