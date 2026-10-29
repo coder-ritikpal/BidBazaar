@@ -1,5 +1,5 @@
 import productModel from "../models/product.model.js";
-import { uploadProductImages } from "./imagekit.service.js";
+import { uploadProductImages, deleteProductImages } from "./imagekit.service.js";
 import {
   createAuctionForProduct,
   updateAuctionForProduct,
@@ -175,6 +175,16 @@ export const createProduct = async ({ sellerId, body, files }) => {
     await product.save();
   } catch (auctionError) {
     await product.deleteOne();
+    if (typeof deleteProductImages === "function") {
+      try {
+        await deleteProductImages(images);
+      } catch (deleteError) {
+        console.error(
+          "Failed to delete product images after auction creation failure:",
+          deleteError.message,
+        );
+      }
+    }
     const error = new Error("Product review started, but auction creation failed");
     error.statusCode = 502;
     error.details = "Could not create the auction for this product.";

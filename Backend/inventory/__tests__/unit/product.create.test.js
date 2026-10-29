@@ -3,10 +3,11 @@ import { jest } from "@jest/globals";
 
 // ---------- Mocks ----------
 const uploadProductImages = jest.fn();
-// const createAuctionForProduct = jest.fn();
+const deleteProductImages = jest.fn();
 
 jest.unstable_mockModule("../../src/services/imagekit.service.js", () => ({
   uploadProductImages,
+  deleteProductImages,
 }));
 
 // ---------- Imports ----------
@@ -104,6 +105,50 @@ describe("POST /api/products", () => {
     expect(savedProduct.auctionId).toBeDefined();
   });
 
+  it("deletes product and calls deleteProductImages if auction creation fails", async () => {
+    const sellerId = new mongoose.Types.ObjectId();
+    const token = jwt.sign({ id: sellerId.toString() }, process.env.JWT_SECRET);
+    const payload = buildProductPayload(sellerId);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "Auction service unavailable",
+    });
+
+    const response = await request(app)
+      .post("/api/products")
+      .set("Authorization", `Bearer ${token}`)
+      .field("title", payload.title)
+      .field("description", payload.description)
+      .field("price", payload.price)
+      .field("category", payload.category)
+      .field("size", payload.size)
+      .field("sizeUnit", payload.sizeUnit)
+      .field("weight", payload.weight)
+      .field("weightUnit", payload.weightUnit)
+      .field("color", payload.color)
+      .field("material", payload.material)
+      .field("brand", payload.brand)
+      .field("condition", payload.condition)
+      .field("auctionDuration", payload.auctionDuration)
+      .field("auctionDurationUnit", payload.auctionDurationUnit)
+      .field("startOption", "now")
+      .attach("images", Buffer.from([0xff, 0xd8, 0xff, 0x00]), "camera.jpg");
+
+    expect(response.status).toBe(502);
+    expect(response.body.message).toBe("Product review started, but auction creation failed");
+
+    expect(uploadProductImages).toHaveBeenCalledTimes(1);
+    expect(deleteProductImages).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: "image_1",
+      }),
+    ]);
+
+    const count = await productModel.countDocuments({ title: payload.title });
+    expect(count).toBe(0);
+  });
 });
 
 

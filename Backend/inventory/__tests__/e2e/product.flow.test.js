@@ -3,9 +3,11 @@ import { jest } from "@jest/globals";
 
 // ---------- Mocks ----------
 const uploadProductImages = jest.fn();
+const deleteProductImages = jest.fn();
 
 jest.unstable_mockModule("../../src/services/imagekit.service.js", () => ({
   uploadProductImages,
+  deleteProductImages,
 }));
 
 // ---------- Imports ----------

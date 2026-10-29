@@ -59,4 +59,49 @@ export const uploadProductImages = async (files) => {
     thumbnailUrl: result.thumbnailUrl,
     id: result.fileId,
   }));
-  };
+};
+
+/**
+ * Deletes product images from ImageKit.
+ * @param {Array<object|string>} images
+ * An array of image objects containing `id` (or `fileId`) or string file IDs.
+ * @returns {Promise<void>}
+ */
+export const deleteProductImages = async (images) => {
+  if (!images || !Array.isArray(images) || images.length === 0) {
+    return;
+  }
+
+  if (!imagekit) {
+    console.warn(
+      "[Inventory Service] ImageKit is not configured. Image deletion skipped.",
+    );
+    return;
+  }
+
+  const fileIds = images
+    .map((img) => (typeof img === "string" ? img : img?.id || img?.fileId))
+    .filter(Boolean);
+
+  if (fileIds.length === 0) {
+    return;
+  }
+
+  try {
+    if (imagekit.files?.bulk?.delete) {
+      await imagekit.files.bulk.delete({ fileIds });
+    } else {
+      await Promise.allSettled(
+        fileIds.map((fileId) => imagekit.files.delete(fileId)),
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Failed to bulk delete images from ImageKit, attempting individual deletion:",
+      error.message,
+    );
+    await Promise.allSettled(
+      fileIds.map((fileId) => imagekit.files.delete(fileId)),
+    );
+  }
+};

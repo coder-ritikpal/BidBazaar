@@ -11,9 +11,11 @@ const createAuctionForProduct = jest.fn();
 // }));
 
 const uploadProductImages = jest.fn();
+const deleteProductImages = jest.fn();
 
 jest.unstable_mockModule("../../src/services/imagekit.service.js", () => ({
   uploadProductImages,
+  deleteProductImages,
 }));
 
 import request from "supertest";
