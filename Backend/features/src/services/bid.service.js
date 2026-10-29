@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { createHmac } from "node:crypto";
 import auctionModel from "../models/auction.model.js";
 import bidModel from "../models/bid.model.js";
+import { publishToQueue } from "../broker/rabbit.js";
 import { setNxCache, clearCache } from "../cache/redis.js";
 import config from "../config/config.js";
 import { getAuctionStatus } from "../utils/auction.utils.js";
@@ -234,15 +235,11 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
   }
 
   // 4. Publish event to RabbitMQ
-  import("../broker/rabbit.js")
-    .then(({ publishToQueue }) => {
-      publishToQueue("auction_join", {
-        auctionId,
-        bidderId,
-        amount: numericAmount,
-      });
-    })
-    .catch((err) => console.error("Could not import publishToQueue", err));
+  publishToQueue("auction_join", {
+    auctionId,
+    bidderId,
+    amount: numericAmount,
+  }).catch((err) => console.error("Could not publish auction_join to queue", err));
 
   return newBid;
 };

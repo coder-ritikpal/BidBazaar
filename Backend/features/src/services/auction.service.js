@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import auctionModel from "../models/auction.model.js";
 import bidModel from "../models/bid.model.js";
+import { publishToQueue } from "../broker/rabbit.js";
 import config from "../config/config.js";
 import { AUCTION_DURATION_UNITS } from "../constants/auction.constants.js";
 import { getCache, setCache } from "../cache/redis.js";
@@ -77,15 +78,11 @@ export const processAuctionTransitions = async (auction) => {
   if (currentStatus === "live" && !auction.isLiveEventPublished) {
     auction.isLiveEventPublished = true;
     shouldSave = true;
-    import("../broker/rabbit.js")
-      .then(({ publishToQueue }) => {
-        publishToQueue("auction_live", {
-          sellerId: auction.sellerId.toString(),
-          title: auction.title,
-          startingPrice: auction.startingPrice,
-        });
-      })
-      .catch((err) => console.error("Could not import publishToQueue", err));
+    publishToQueue("auction_live", {
+      sellerId: auction.sellerId?.toString() || null,
+      title: auction.title,
+      startingPrice: auction.startingPrice,
+    }).catch((err) => console.error("Could not publish auction_live to queue", err));
   }
 
   if (currentStatus === "ended" && !auction.cancelledAt) {
@@ -140,15 +137,11 @@ export const processAuctionTransitions = async (auction) => {
 
             triggerAutoCreateOrder(atomicallyUpdatedAuction);
 
-            import("../broker/rabbit.js")
-              .then(({ publishToQueue }) => {
-                publishToQueue("auction_won", {
-                  auctionId: atomicallyUpdatedAuction._id.toString(),
-                  winnerId: atomicallyUpdatedAuction.winnerId.toString(),
-                  price: atomicallyUpdatedAuction.currentPrice,
-                });
-              })
-              .catch((err) => console.error("Could not import publishToQueue", err));
+            publishToQueue("auction_won", {
+              auctionId: atomicallyUpdatedAuction._id?.toString() || null,
+              winnerId: atomicallyUpdatedAuction.winnerId?.toString() || null,
+              price: atomicallyUpdatedAuction.currentPrice,
+            }).catch((err) => console.error("Could not publish auction_won to queue", err));
           }
         }
       }
@@ -162,16 +155,12 @@ export const processAuctionTransitions = async (auction) => {
     if (!winnerResolutionPending && !auction.isEndedEventPublished) {
       auction.isEndedEventPublished = true;
       shouldSave = true;
-      import("../broker/rabbit.js")
-        .then(({ publishToQueue }) => {
-          publishToQueue("auction_ended", {
-            sellerId: auction.sellerId.toString(),
-            title: auction.title,
-            currentPrice: auction.currentPrice,
-            winnerId: auction.winnerId ? auction.winnerId.toString() : null,
-          });
-        })
-        .catch((err) => console.error("Could not import publishToQueue", err));
+      publishToQueue("auction_ended", {
+        sellerId: auction.sellerId?.toString() || null,
+        title: auction.title,
+        currentPrice: auction.currentPrice,
+        winnerId: auction.winnerId ? auction.winnerId.toString() : null,
+      }).catch((err) => console.error("Could not publish auction_ended to queue", err));
     }
   }
 
