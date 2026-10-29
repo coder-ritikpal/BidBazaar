@@ -1,10 +1,21 @@
 import rateLimit from 'express-rate-limit';
 
 /**
+ * Calculates remaining minutes until the rate limit window resets.
+ */
+const getRemainingMinutes = (req, defaultMinutes = 15) => {
+  const resetTime = req.rateLimit?.resetTime;
+  if (!resetTime) return defaultMinutes;
+  const remainingMs = Math.max(0, resetTime.getTime() - Date.now());
+  return Math.max(1, Math.ceil(remainingMs / (60 * 1000)));
+};
+
+/**
  * Login rate limiter:
  * Limits failed login attempts to 10 per 15-minute window per IP.
  * Crucially, `skipSuccessfulRequests: true` ensures legitimate users
  * with the correct password never get locked out simply for logging in.
+ * Computes remaining wait time dynamically instead of showing static text.
  */
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -12,7 +23,12 @@ export const loginLimiter = rateLimit({
   skipSuccessfulRequests: true, // Only failed attempts (wrong password) consume quota
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many failed login attempts, please try again 15 minutes later.' },
+  message: (req) => {
+    const minutes = getRemainingMinutes(req, 15);
+    return {
+      message: `Too many failed login attempts, please try again ${minutes} minute${minutes === 1 ? '' : 's'} later.`,
+    };
+  },
 });
 
 /**
@@ -25,7 +41,12 @@ export const registerLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many accounts registered from this IP, please try again after 1 hour.' },
+  message: (req) => {
+    const minutes = getRemainingMinutes(req, 60);
+    return {
+      message: `Too many accounts registered from this IP, please try again ${minutes} minute${minutes === 1 ? '' : 's'} later.`,
+    };
+  },
 });
 
 /**
@@ -38,7 +59,12 @@ export const googleExchangeLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: 'Too many Google authentication attempts, please try again later.' },
+  message: (req) => {
+    const minutes = getRemainingMinutes(req, 15);
+    return {
+      message: `Too many Google authentication attempts, please try again ${minutes} minute${minutes === 1 ? '' : 's'} later.`,
+    };
+  },
 });
 
 // Backward-compatible alias
