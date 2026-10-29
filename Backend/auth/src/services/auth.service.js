@@ -14,6 +14,11 @@ import { toUserResponse } from "../utils/user.utils.js";
 export const registerUser = async ({ firstName, lastName, email, password }) => {
   const existingUser = await userModel.findOne({ email });
   if (existingUser) {
+    if (!existingUser.password && existingUser.googleId) {
+      const error = new Error("An account with this email already exists via Google. Please log in using 'Sign in with Google'.");
+      error.statusCode = 409;
+      throw error;
+    }
     const error = new Error("User already exists");
     error.statusCode = 409;
     throw error;
@@ -55,7 +60,20 @@ export const registerUser = async ({ firstName, lastName, email, password }) => 
  */
 export const loginUser = async ({ email, password }) => {
   const user = await userModel.findOne({ email });
-  if (!user || !user.password) {
+  if (!user) {
+    const error = new Error("Invalid credentials");
+    error.statusCode = 401;
+    throw error;
+  }
+
+  // If the account was registered with Google and has no password set yet
+  if (!user.password && user.googleId) {
+    const error = new Error("This account was registered using Google. Please log in with Google.");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!user.password) {
     const error = new Error("Invalid credentials");
     error.statusCode = 401;
     throw error;
