@@ -83,8 +83,8 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
   // Backfill uniqueBidders for older auctions if needed
   if (
     (!Array.isArray(auction.uniqueBidders) || auction.uniqueBidders.length === 0) &&
-    Array.isArray(auction.bids) &&
-    auction.bids.length > 0
+    ((typeof auction.totalBids === "number" && auction.totalBids > 0) ||
+      (Array.isArray(auction.bids) && auction.bids.length > 0))
   ) {
     const historicalBids = await bidModel
       .find({ auctionId })
@@ -198,31 +198,12 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
         ],
       },
     },
-    [
-      {
-        $set: {
-          currentPrice: { $literal: numericAmount },
-          bids: {
-            $concatArrays: [{ $ifNull: ["$bids", []] }, [{ $literal: bidId }]],
-          },
-          uniqueBidders: {
-            $let: {
-              vars: { existing: { $ifNull: ["$uniqueBidders", []] } },
-              in: {
-                $cond: [
-                  { $in: [{ $literal: bidderObjectId }, "$$existing"] },
-                  "$$existing",
-                  {
-                    $concatArrays: ["$$existing", [{ $literal: bidderObjectId }]],
-                  },
-                ],
-              },
-            },
-          },
-        },
-      },
-    ],
-    { new: true, updatePipeline: true },
+    {
+      $set: { currentPrice: numericAmount },
+      $inc: { totalBids: 1 },
+      $addToSet: { uniqueBidders: bidderObjectId },
+    },
+    { new: true },
   );
 
   if (!updatedAuction) {
@@ -242,6 +223,7 @@ export const placeBid = async ({ auctionId, bidderId, amount, io }) => {
     io.to(auctionId).emit("new_bid", {
       auctionId,
       currentPrice: updatedAuction.currentPrice,
+      totalBids: updatedAuction.totalBids,
       bid: {
         _id: newBid._id,
         amount: newBid.amount,

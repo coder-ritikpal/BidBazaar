@@ -56,10 +56,6 @@ const AuctionDetailsPage = () => {
   const [sellerDisplayName, setSellerDisplayName] = useState(null);
   const [winnerDisplayName, setWinnerDisplayName] = useState(null);
   const [isFlashing, setIsFlashing] = useState(false); // New state for socket real-time flash
-  // Use environment variable, fallback to production URL if in prod, otherwise localhost
-  const SOCKET_URL = import.meta.env.VITE_API_URL_FEATURES || 
-    (import.meta.env.PROD ? 'https://bidbazaar-auctions.onrender.com' : 'http://localhost:3002');
-
   const fetchAuction = useCallback(async () => {
     try {
       const response = await getAuctionDetails(auctionId);
@@ -103,6 +99,10 @@ const AuctionDetailsPage = () => {
   }, [fetchAuction, fetchBids]);
 
   useEffect(() => {
+    if (!auctionId || !SOCKET_URL) return;
+
+    const sanitizedAuctionId = String(auctionId).trim();
+
     const socket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ['websocket', 'polling'],
@@ -110,24 +110,23 @@ const AuctionDetailsPage = () => {
 
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
-      socket.emit('join_auction', auctionId);
+      socket.emit('join_auction', sanitizedAuctionId);
     });
 
     socket.on('new_bid', (data) => {
-      if (data.auctionId === auctionId) {
+      if (data && String(data.auctionId) === sanitizedAuctionId) {
         // Update auction price and trigger visual flash
-        setAuction(prevAuction => {
+        setAuction((prevAuction) => {
           if (!prevAuction) return prevAuction;
           setIsFlashing(true);
           setTimeout(() => setIsFlashing(false), 1000);
-          const updatedBids = Array.isArray(prevAuction.bids) ? [...prevAuction.bids] : [];
-          if (data.bid?._id && !updatedBids.includes(data.bid._id)) {
-            updatedBids.push(data.bid._id);
-          }
+          const currentTotalBids = typeof prevAuction.totalBids === 'number'
+            ? prevAuction.totalBids
+            : (Array.isArray(prevAuction.bids) ? prevAuction.bids.length : 0);
           return {
             ...prevAuction,
-            currentPrice: data.currentPrice,
-            bids: updatedBids,
+            currentPrice: Number(data.currentPrice) || prevAuction.currentPrice,
+            totalBids: typeof data.totalBids === 'number' ? data.totalBids : currentTotalBids + 1,
           };
         });
 
@@ -135,11 +134,11 @@ const AuctionDetailsPage = () => {
         const formattedBid = {
           ...data.bid,
           isSelf: false,
-          bidderLabel: data.bid.bidderLabel || 'Bidder',
+          bidderLabel: data.bid?.bidderLabel || 'Bidder',
         };
 
-        setBids(prevBids => {
-          if (data.bid?._id && prevBids.some(b => String(b._id) === String(data.bid._id))) {
+        setBids((prevBids) => {
+          if (data.bid?._id && prevBids.some((b) => String(b._id) === String(data.bid._id))) {
             return prevBids;
           }
           return [formattedBid, ...prevBids];
@@ -147,7 +146,7 @@ const AuctionDetailsPage = () => {
 
         // The history endpoint applies the viewer-specific "You" label without
         // sending bidder IDs over the public socket event.
-        getAuctionBids(auctionId)
+        getAuctionBids(sanitizedAuctionId)
           .then((response) => {
             const refreshedBids = response.data.bids || [];
             setBidPage(1);
@@ -167,9 +166,10 @@ const AuctionDetailsPage = () => {
     });
 
     return () => {
+      socket.emit('leave_auction', sanitizedAuctionId);
       socket.disconnect();
     };
-  }, [auctionId, SOCKET_URL]);
+  }, [auctionId]);
 
   useEffect(() => {
     if (!auction || (auction.status !== 'live' && auction.status !== 'upcoming')) return;
@@ -402,7 +402,7 @@ const AuctionDetailsPage = () => {
               </div>
               <div className="text-right">
                 <p className={classes.priceLabel}>Bids</p>
-                <p className={classes.priceValue}>{auction.bids?.length || 0}</p>
+                <p className={classes.priceValue}>{auction.totalBids ?? auction.bids?.length ?? 0}</p>
               </div>
             </div>
 
@@ -471,7 +471,7 @@ const AuctionDetailsPage = () => {
                       Won by <strong>{winnerName}</strong> with a bid of Rs.{auction.currentPrice}.
                     </p>
 
-                  ) : auction.bids && auction.bids.length > 0 ? (
+                  ) : (auction.totalBids > 0 || (auction.bids && auction.bids.length > 0)) ? (
                     <p className="mt-1 text-amber-300">
                       Finalizing winner... Please refresh in a moment.
                     </p>

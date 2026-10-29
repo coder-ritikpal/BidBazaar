@@ -9,7 +9,7 @@ const auctionSchema = new mongoose.Schema({
   category: { type: String, required: true },
   startingPrice: { type: Number, required: true },
   currentPrice: { type: Number, required: true },
-  bids: [{ type: mongoose.Schema.Types.ObjectId, ref: "bid" }],
+  totalBids: { type: Number, default: 0 },
   uniqueBidders: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
   winnerId: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
   winningBidId: { type: mongoose.Schema.Types.ObjectId, ref: "bid" },

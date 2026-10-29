@@ -93,32 +93,37 @@ export const processAuctionTransitions = async (auction) => {
     if (!auction.winnerId) {
       const latestAuction = await auction.constructor
         .findById(auction._id)
-        .select("winnerId winningBidId currentPrice bids")
+        .select("winnerId winningBidId currentPrice totalBids bids")
         .lean();
 
       if (latestAuction?.winnerId) {
         auction.winnerId = latestAuction.winnerId;
         auction.winningBidId = latestAuction.winningBidId;
         auction.currentPrice = latestAuction.currentPrice;
-      } else if (latestAuction?.bids?.length) {
+      } else if (latestAuction?.totalBids > 0 || latestAuction?.bids?.length) {
         winnerResolutionPending = true;
-        const acceptedBidIds = latestAuction.bids;
+        const bidQuery = {
+          auctionId: auction._id,
+          amount: latestAuction.currentPrice,
+        };
+        if (latestAuction.bids?.length) {
+          bidQuery._id = { $in: latestAuction.bids };
+        }
         const winningBid = await bidModel
-          .findOne({
-            _id: { $in: acceptedBidIds },
-            auctionId: auction._id,
-            amount: latestAuction.currentPrice,
-          })
+          .findOne(bidQuery)
           .sort({ createdAt: -1 });
 
         if (winningBid) {
+          const updateFilter = {
+            _id: auction._id,
+            $or: [{ winnerId: { $exists: false } }, { winnerId: null }],
+            currentPrice: latestAuction.currentPrice,
+          };
+          if (latestAuction.bids?.length) {
+            updateFilter.bids = winningBid._id;
+          }
           const atomicallyUpdatedAuction = await auction.constructor.findOneAndUpdate(
-            {
-              _id: auction._id,
-              $or: [{ winnerId: { $exists: false } }, { winnerId: null }],
-              currentPrice: latestAuction.currentPrice,
-              bids: winningBid._id,
-            },
+            updateFilter,
             {
               $set: {
                 winnerId: winningBid.bidderId,
@@ -313,7 +318,7 @@ export const getAuctionById = async (auctionId) => {
   if (
     currentStatus === "ended" &&
     !auction.cancelledAt &&
-    ((!auction.winnerId && Array.isArray(auction.bids) && auction.bids.length > 0) || !auction.deleteAt)
+    ((!auction.winnerId && ((typeof auction.totalBids === "number" && auction.totalBids > 0) || (Array.isArray(auction.bids) && auction.bids.length > 0))) || !auction.deleteAt)
   ) {
     auction = await processAuctionTransitions(auction);
   }
@@ -486,7 +491,10 @@ export const cancelAuction = async (auctionId, sellerId) => {
     throw error;
   }
 
-  if (auction.bids && auction.bids.length > 0) {
+  const hasBids =
+    (typeof auction.totalBids === "number" && auction.totalBids > 0) ||
+    (Array.isArray(auction.bids) && auction.bids.length > 0);
+  if (hasBids) {
     const error = new Error("Cannot cancel an auction that has active bids.");
     error.statusCode = 400;
     throw error;

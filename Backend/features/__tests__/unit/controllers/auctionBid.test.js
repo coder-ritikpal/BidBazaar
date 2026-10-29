@@ -98,7 +98,7 @@ describe("auctionBid", () => {
 
     expect(findByIdMock).toHaveBeenCalledWith(auctionId);
     expect(bidFindOneMock).toHaveBeenCalled();
-    const [filter, updatePipeline, options] = findOneAndUpdateMock.mock.calls[0];
+    const [filter, update, options] = findOneAndUpdateMock.mock.calls[0];
     expect(filter).toEqual({
       _id: auctionId,
       currentPrice: { $lt: 1500 },
@@ -106,13 +106,12 @@ describe("auctionBid", () => {
       cancelledAt: null,
       $expr: expect.any(Object)
     });
-    expect(Array.isArray(updatePipeline)).toBe(true);
-    expect(updatePipeline[0].$set.currentPrice).toEqual({ $literal: 1500 });
-    expect(updatePipeline[0].$set.bids.$concatArrays[1][0].$literal)
-      .toBeInstanceOf(mongoose.Types.ObjectId);
-    expect(updatePipeline[0].$set.uniqueBidders.$let.in.$cond[0].$in[0].$literal)
-      .toEqual(new mongoose.Types.ObjectId(bidderId));
-    expect(options).toEqual({ new: true, updatePipeline: true });
+    expect(update).toEqual({
+      $set: { currentPrice: 1500 },
+      $inc: { totalBids: 1 },
+      $addToSet: { uniqueBidders: new mongoose.Types.ObjectId(bidderId) },
+    });
+    expect(options).toEqual({ new: true });
     expect(bidModelMock).toHaveBeenCalledWith(expect.objectContaining({
       auctionId,
       bidderId,
@@ -148,11 +147,11 @@ describe("auctionBid", () => {
     expect(req.app.get).toHaveBeenCalledWith("io");
     expect(mockIo.to).toHaveBeenCalledWith(auctionId);
 
-    expect(mockEmit).toHaveBeenCalledWith("new_bid", {
+    expect(mockEmit).toHaveBeenCalledWith("new_bid", expect.objectContaining({
       auctionId,
       currentPrice: 1500,
       bid: expect.objectContaining({ bidderLabel: expect.stringMatching(/^Bidder [a-f0-9]{7}$/), amount: 1500 }),
-    });
+    }));
   });
 
   it("backfills bidder order for an existing auction before accepting a bid", async () => {
@@ -267,7 +266,7 @@ describe("auctionBid", () => {
     await auctionBid(req, res);
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
-      message: "You are already the highest bidder. You cannot bid against yourself.",
+      message: "You are already the highest bidder. You must wait until another user outbids you.",
     });
   });
 

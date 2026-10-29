@@ -15,10 +15,14 @@ import connectDB from '../src/db/db.js';// adjust path
 let mongo;
 
 beforeAll(async () => {
-  mongo = await MongoMemoryServer.create();
-  const uri = mongo.getUri();
-
-  process.env.MONGO_URI = uri;
+  if (!process.env.MONGO_URI) {
+    try {
+      mongo = await MongoMemoryServer.create();
+      process.env.MONGO_URI = mongo.getUri();
+    } catch {
+      process.env.MONGO_URI = 'mongodb://127.0.0.1:27017/test_features';
+    }
+  }
   process.env.JWT_SECRET = 'test_jwt_secret';
 
   await connectDB(); // ✅ use same connection logic
