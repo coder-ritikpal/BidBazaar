@@ -75,45 +75,84 @@ const MyOrders = () => {
           const protectionFee = baseAmount * 0.05 + 100;
           const totalAmount = baseAmount + protectionFee;
           return (
-          <Link to={`/order/${order._id}`} key={order._id} className={styles.orderCard}>
-            <img
-              src={order.itemDetails?.image || 'https://via.placeholder.com/100'}
-              alt={order.itemDetails?.title}
-              className={styles.image}
-            />
-            <div className={styles.itemDetails}>
-              <h3 className={styles.itemTitle}>{order.itemDetails?.title}</h3>
-              <p className={styles.price}>₹{order.amount}</p>
-              <p className={styles.orderId}>Order ID: {order._id.slice(-6)}</p>
-            </div>
-            <div className={styles.statusSection}>
-              {isPending ? (
-                <div className="flex flex-col items-end gap-2 text-right">
-                  <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <span>Item Price: ₹{baseAmount.toFixed(2)}</span><br />
-                    <span>Buyer Protection: ₹{protectionFee.toFixed(2)}</span>
-                  </div>
-                  <p className={`font-bold text-base ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Total: ₹{totalAmount.toFixed(2)}</p>
-                  <Button onClick={(e) => { e.preventDefault(); handlePayment(order); }} disabled={payingOrderId === order._id}>
-                    {payingOrderId === order._id ? 'Initiating...' : <><CreditCard className="mr-2 h-4 w-4" /> Pay Now</>}
-                  </Button>
+            <Link to={`/order/${order._id}`} key={order._id} className={styles.orderCard}>
+              <div className={styles.itemMain}>
+                <img
+                  src={order.itemDetails?.image || 'https://via.placeholder.com/100'}
+                  alt={order.itemDetails?.title}
+                  className={styles.image}
+                />
+                <div className={styles.itemDetails}>
+                  <h3 className={styles.itemTitle}>{order.itemDetails?.title}</h3>
+                  <p className={styles.price}>₹{order.amount}</p>
+                  <p className={styles.orderId}>Order ID: {order._id.slice(-6)}</p>
                 </div>
-              ) : (
-                <div className="flex flex-col items-end gap-2">
-                  <span className={styles.statusBadge}>{order.status ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)).replace('_', ' ') : 'Processing'}</span>
+              </div>
 
-                  {order.status === 'shipped' && order.trackingNumber && (
-                     <a href={getTrackingUrl(order.shippingProvider, order.trackingNumber)} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                       <Button variant="outline" size="sm" className="bg-transparent text-foreground hover:text-accent-foreground">
-                         <Truck className="mr-2 h-4 w-4" /> Track Package
-                       </Button>
-                     </a>
-                  )}
-                </div>
-              )}
-            </div>
-          </Link>
-        )})}
+              <div className={styles.statusSection}>
+                {isPending ? (
+                  <div className={styles.paymentBreakdown}>
+                    <div className={styles.priceDetails}>
+                      <div className={styles.priceRow}>
+                        <span>Item Price:</span>
+                        <span className={styles.priceValue}>₹{baseAmount.toFixed(2)}</span>
+                      </div>
+                      <div className={styles.priceRow}>
+                        <span>Buyer Protection:</span>
+                        <span className={styles.priceValue}>₹{protectionFee.toFixed(2)}</span>
+                      </div>
+                      <div className={styles.totalRow}>
+                        <span>Total:</span>
+                        <span className={styles.totalValue}>₹{totalAmount.toFixed(2)}</span>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePayment(order);
+                      }}
+                      disabled={payingOrderId === order._id}
+                      className={styles.payButton}
+                    >
+                      {payingOrderId === order._id ? (
+                        'Initiating...'
+                      ) : (
+                        <>
+                          <CreditCard className="mr-2 h-4 w-4" /> Pay Now
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className={styles.processedSection}>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs sm:hidden ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Status:</span>
+                      <span className={styles.statusBadge}>
+                        {order.status
+                          ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)).replace('_', ' ')
+                          : 'Processing'}
+                      </span>
+                    </div>
+
+                    {order.status === 'shipped' && order.trackingNumber && (
+                      <a
+                        href={getTrackingUrl(order.shippingProvider, order.trackingNumber)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button variant="outline" size="sm" className="bg-transparent text-foreground hover:text-accent-foreground">
+                          <Truck className="mr-2 h-4 w-4" /> Track Package
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Link>
+          );
+        })}
       </div>
     );
   };
