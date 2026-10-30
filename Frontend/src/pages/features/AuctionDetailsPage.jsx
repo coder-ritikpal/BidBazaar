@@ -10,6 +10,10 @@ import { toast } from 'react-toastify';
 import { Gavel, User, Info, History, CheckCircle } from 'lucide-react';
 import { getAuctionDetails, getAuctionBids, bidOnAuction, getUserPublicProfile } from '@/data/api';
 
+const SOCKET_URL =
+  import.meta.env.VITE_API_URL_FEATURES ||
+  (import.meta.env.PROD ? 'https://bidbazaar-auctions.onrender.com' : 'http://localhost:3002');
+
 const CountdownDisplay = ({ parts, label, classes }) => (
   <div className={classes.countdownContainer}>
     <p className={classes.countdownEndsLabel}>{label}</p>
