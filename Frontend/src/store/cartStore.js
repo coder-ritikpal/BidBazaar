@@ -16,17 +16,25 @@ const loadRazorpayScript = () => {
 
 export const useCartStore = create((set, get) => ({
   myOrders: [],
+  ordersPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
   loadingMyOrders: false,
   errorMyOrders: null,
   currentOrder: null,
   loadingCurrentOrder: false,
   errorCurrentOrder: null,
 
-  fetchMyOrders: async () => {
+  fetchMyOrders: async (page = 1, limit = 10) => {
     set({ loadingMyOrders: true, errorMyOrders: null });
     try {
-      const response = await api.get('/dashboard/orders/my-orders');
-      set({ myOrders: response.data.orders || [], loadingMyOrders: false });
+      const response = await api.get('/dashboard/orders/my-orders', { params: { page, limit } });
+      const orders = response.data.orders || [];
+      const pagination = response.data.pagination || {
+        page,
+        limit,
+        total: orders.length,
+        totalPages: 1,
+      };
+      set({ myOrders: orders, ordersPagination: pagination, loadingMyOrders: false });
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Failed to fetch orders.';
       set({ errorMyOrders: errorMessage, loadingMyOrders: false });
@@ -151,6 +159,7 @@ export const useCartStore = create((set, get) => ({
   clearCartData: () => {
     set({
       myOrders: [],
+      ordersPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
       loadingMyOrders: false,
       errorMyOrders: null,
     });

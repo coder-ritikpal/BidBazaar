@@ -67,8 +67,8 @@ export const getUserPublicProfile = async (userId) => {
 
 // --- Cart Service API Calls (proxied through Dashboard BFF) ---
 
-export const getMyOrders = async () => {
-  return api.get(`/dashboard/orders/my-orders`);
+export const getMyOrders = async (page = 1, limit = 10) => {
+  return api.get(`/dashboard/orders/my-orders`, { params: { page, limit } });
 };
 
 export const getOrderById = async (orderId) => {
@@ -115,12 +115,12 @@ export const deleteProduct = async (productId) => {
   return api.delete(`/dashboard/products/${productId}`);
 };
 
-export const getListedItems = async () => {
-  return api.get(`/dashboard/inventory/listed-items`);
+export const getListedItems = async (page = 1, limit = 10) => {
+  return api.get(`/dashboard/inventory/listed-items`, { params: { page, limit } });
 };
 
-export const getSoldItems = async () => {
-  return api.get(`/dashboard/inventory/sold-items`);
+export const getSoldItems = async (page = 1, limit = 10) => {
+  return api.get(`/dashboard/inventory/sold-items`, { params: { page, limit } });
 };
 
 // Add other API functions as you create them

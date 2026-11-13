@@ -21,6 +21,7 @@ const addUiProperties = (product) => {
 export const useInventoryStore = create((set) => ({
   // Seller's Listed Items State
   listedItems: [],
+  listedPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
   loadingListedItems: false,
   errorListedItems: null,
   creatingProduct: false,
@@ -31,19 +32,30 @@ export const useInventoryStore = create((set) => ({
   deleteProductError: null,
   // Seller's Sold Items State
   soldItems: [],
+  soldPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
   loadingSoldItems: false,
   errorSoldItems: null,
   currentEditingProduct: null,
-  fetchListedItems: async () => {
+  fetchListedItems: async (page = 1, limit = 10) => {
     set({ loadingListedItems: true, errorListedItems: null });
     try {
-      const response = await getListedItemsApi();
+      const response = await getListedItemsApi(page, limit);
       const products = (response.data?.products || []).map(addUiProperties);
-      set({ listedItems: products, loadingListedItems: false });
+      const pagination = response.data?.pagination || {
+        page,
+        limit,
+        total: products.length,
+        totalPages: 1,
+      };
+      set({ listedItems: products, listedPagination: pagination, loadingListedItems: false });
     } catch (err) {
       console.error('Error fetching listed items:', err);
       if (err.response && err.response.status === 404) {
-        set({ listedItems: [], loadingListedItems: false });
+        set({
+          listedItems: [],
+          listedPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+          loadingListedItems: false,
+        });
       } else {
         set({ errorListedItems: 'Failed to load your listed items.', loadingListedItems: false });
       }
@@ -115,11 +127,18 @@ export const useInventoryStore = create((set) => ({
     }
   },
 
-  fetchSoldItems: async () => {
+  fetchSoldItems: async (page = 1, limit = 10) => {
     set({ loadingSoldItems: true, errorSoldItems: null });
     try {
-      const response = await getSoldItemsApi();
-      set({ soldItems: response.data.orders || [], loadingSoldItems: false });
+      const response = await getSoldItemsApi(page, limit);
+      const orders = response.data.orders || [];
+      const pagination = response.data?.pagination || {
+        page,
+        limit,
+        total: orders.length,
+        totalPages: 1,
+      };
+      set({ soldItems: orders, soldPagination: pagination, loadingSoldItems: false });
     } catch (err) {
       const errorMessage = err.response?.data?.message || 'Failed to fetch sold items.';
       set({ errorSoldItems: errorMessage, loadingSoldItems: false });
@@ -129,8 +148,13 @@ export const useInventoryStore = create((set) => ({
   clearInventoryData: () => {
     set({
       listedItems: [],
+      listedPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
       loadingListedItems: false,
       errorListedItems: null,
+      soldItems: [],
+      soldPagination: { page: 1, limit: 10, total: 0, totalPages: 0 },
+      loadingSoldItems: false,
+      errorSoldItems: null,
       currentEditingProduct: null,
     });
   },

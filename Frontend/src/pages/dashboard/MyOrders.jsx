@@ -11,14 +11,15 @@ import { toast } from 'react-toastify';
 const MyOrders = () => {
   const { theme } = useThemeStore();
   const styles = getMyOrdersStyles(theme);
-  const { myOrders, loadingMyOrders, errorMyOrders, fetchMyOrders, payForOrder } = useCartStore();
+  const { myOrders, ordersPagination, loadingMyOrders, errorMyOrders, fetchMyOrders, payForOrder } = useCartStore();
   const { user } = useAuthStore();
   const [payingOrderId, setPayingOrderId] = useState(null);
+  const [ordersPage, setOrdersPage] = useState(1);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchMyOrders();
-  }, [fetchMyOrders]);
+    fetchMyOrders(ordersPage);
+  }, [fetchMyOrders, ordersPage]);
 
   const handlePayment = async (order) => {
     if (!user) {
@@ -172,7 +173,7 @@ const MyOrders = () => {
           <h1 className={styles.title}>
             <ShoppingCart className="text-purple-500" /> My Cart & Orders
           </h1>
-          <button onClick={fetchMyOrders} className={styles.refreshButton} title="Refresh">
+          <button onClick={() => fetchMyOrders(ordersPage)} className={styles.refreshButton} title="Refresh">
             <RefreshCw className={`w-5 h-5 ${loadingMyOrders ? 'animate-spin' : ''}`} />
           </button>
         </div>
@@ -197,6 +198,33 @@ const MyOrders = () => {
               <h2 className={styles.sectionTitle}>Order History ({processedOrders.length})</h2>
               {renderOrderList(processedOrders, false)}
             </section>
+            {!loadingMyOrders && (ordersPagination?.totalPages || 0) > 1 && (
+              <nav className="mt-8 flex items-center justify-center gap-4" aria-label="Orders pages">
+                <button
+                  type="button"
+                  disabled={ordersPage <= 1}
+                  onClick={() => setOrdersPage((prev) => Math.max(1, prev - 1))}
+                  className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    theme === 'dark' ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Previous
+                </button>
+                <span aria-live="polite" className={`text-xs sm:text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Page {ordersPagination.page} of {ordersPagination.totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={ordersPage >= ordersPagination.totalPages}
+                  onClick={() => setOrdersPage((prev) => Math.min(ordersPagination.totalPages, prev + 1))}
+                  className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    theme === 'dark' ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Next
+                </button>
+              </nav>
+            )}
           </div>
         )}
       </div>

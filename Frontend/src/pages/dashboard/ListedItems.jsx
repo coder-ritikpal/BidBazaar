@@ -16,18 +16,22 @@ const ListedItems = () => {
   const styles = getListedItemsStyles(theme);
   const {
     listedItems: items,
+    listedPagination,
     loadingListedItems: loading,
     errorListedItems: error,
     fetchListedItems,
     deleteProduct,
     deletingProductId,
     soldItems,
+    soldPagination,
     loadingSoldItems,
     fetchSoldItems,
   } = useInventoryStore();
   const { shipOrder } = useCartStore(); // For the "Simulate Ship" button
 
   const [activeTab, setActiveTab] = useState('listed');
+  const [listedPage, setListedPage] = useState(1);
+  const [soldPage, setSoldPage] = useState(1);
   const [shippingOrderId, setShippingOrderId] = useState(null);
 
   const formatDateTime = (value) => {
@@ -58,9 +62,12 @@ const ListedItems = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'listed') fetchListedItems();
-    if (activeTab === 'sold') fetchSoldItems();
-  }, [activeTab, fetchListedItems, fetchSoldItems]);
+    if (activeTab === 'listed') fetchListedItems(listedPage);
+  }, [activeTab, listedPage, fetchListedItems]);
+
+  useEffect(() => {
+    if (activeTab === 'sold') fetchSoldItems(soldPage);
+  }, [activeTab, soldPage, fetchSoldItems]);
 
   const handleEdit = (productId) => {
     navigate(`/start-selling?edit=${productId}`);
@@ -117,16 +124,16 @@ const ListedItems = () => {
             </Link>
             <button
               onClick={() => {
-                if (activeTab === 'listed') fetchListedItems();
-                else fetchSoldItems();
+                if (activeTab === 'listed') fetchListedItems(listedPage);
+                else fetchSoldItems(soldPage);
               }}
               className={`p-2 rounded-full transition-colors ${isDark ? 'hover:bg-gray-800 text-gray-400' : 'hover:bg-gray-100 text-gray-600'}`}
               title="Refresh"
             >
-              <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 sm:w-5 sm:h-5 ${loading || loadingSoldItems ? 'animate-spin' : ''}`} />
             </button>
             <span className={styles.itemCount}>
-              {activeTab === 'listed' ? `${items.length} Listed` : `${soldItems.length} Sold`}
+              {activeTab === 'listed' ? `${listedPagination?.total ?? items.length} Listed` : `${soldPagination?.total ?? soldItems.length} Sold`}
             </span>
           </div>
         </div>
@@ -147,7 +154,7 @@ const ListedItems = () => {
                 : `${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
             }`}
           >
-            <Package className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Listed ({items.length})
+            <Package className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Listed ({listedPagination?.total ?? items.length})
           </Button>
           <Button
             onClick={() => setActiveTab('sold')}
@@ -157,7 +164,7 @@ const ListedItems = () => {
                 : `${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`
             }`}
           >
-            <DollarSign className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Sold ({soldItems.length})
+            <DollarSign className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" /> Sold ({soldPagination?.total ?? soldItems.length})
           </Button>
         </div>
 
@@ -240,6 +247,33 @@ const ListedItems = () => {
           </div>
         )
       )}
+        {activeTab === 'listed' && !loading && (listedPagination?.totalPages || 0) > 1 && (
+          <nav className="mt-8 flex items-center justify-center gap-4" aria-label="Listed items pages">
+            <button
+              type="button"
+              disabled={listedPage <= 1}
+              onClick={() => setListedPage((prev) => Math.max(1, prev - 1))}
+              className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDark ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Previous
+            </button>
+            <span aria-live="polite" className={`text-xs sm:text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+              Page {listedPagination.page} of {listedPagination.totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={listedPage >= listedPagination.totalPages}
+              onClick={() => setListedPage((prev) => Math.min(listedPagination.totalPages, prev + 1))}
+              className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDark ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Next
+            </button>
+          </nav>
+        )}
         {activeTab === 'sold' && (
           soldItems.length === 0 ? (
             <div className={styles.emptyStateContainer}>
@@ -281,6 +315,33 @@ const ListedItems = () => {
               ))}
             </div>
           )
+        )}
+        {activeTab === 'sold' && !loadingSoldItems && (soldPagination?.totalPages || 0) > 1 && (
+          <nav className="mt-8 flex items-center justify-center gap-4" aria-label="Sold items pages">
+            <button
+              type="button"
+              disabled={soldPage <= 1}
+              onClick={() => setSoldPage((prev) => Math.max(1, prev - 1))}
+              className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDark ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Previous
+            </button>
+            <span aria-live="polite" className={`text-xs sm:text-sm ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+              Page {soldPagination.page} of {soldPagination.totalPages}
+            </span>
+            <button
+              type="button"
+              disabled={soldPage >= soldPagination.totalPages}
+              onClick={() => setSoldPage((prev) => Math.min(soldPagination.totalPages, prev + 1))}
+              className={`rounded-lg border px-4 py-2 text-xs sm:text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isDark ? 'border-gray-700 bg-gray-800 text-gray-200 hover:bg-gray-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Next
+            </button>
+          </nav>
         )}
       </div>
     </div>
