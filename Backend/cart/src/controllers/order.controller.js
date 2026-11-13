@@ -7,8 +7,8 @@ export { fetchAuctionFromService };
 export const getMyOrders = async (req, res) => {
   const userId = req.user?.id;
   try {
-    const orders = await orderService.getMyOrders(userId);
-    return res.status(200).json({ message: "Orders fetched successfully.", orders });
+    const { orders, pagination } = await orderService.getMyOrders(userId, req.query);
+    return res.status(200).json({ message: "Orders fetched successfully.", orders, pagination });
   } catch (error) {
     if (error.statusCode === 401) {
       return res.status(401).json({ message: error.message });
@@ -35,8 +35,8 @@ export const getOrderById = async (req, res) => {
 export const getSoldOrders = async (req, res) => {
   const userId = req.user?.id;
   try {
-    const orders = await orderService.getSoldOrders(userId);
-    return res.status(200).json({ message: "Sold orders fetched successfully.", orders });
+    const { orders, pagination } = await orderService.getSoldOrders(userId, req.query);
+    return res.status(200).json({ message: "Sold orders fetched successfully.", orders, pagination });
   } catch (error) {
     if (error.statusCode === 401) {
       return res.status(401).json({ message: error.message });

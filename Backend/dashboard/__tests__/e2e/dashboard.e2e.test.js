@@ -156,7 +156,10 @@ describe("Dashboard BFF", () => {
     expect(res.body).toEqual({ auctions: [{ _id: "a1" }] });
     expect(global.fetch).toHaveBeenCalledWith(expect.objectContaining({ href: "http://localhost:3002/api/auctions" }), {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Forwarded-For": expect.any(String),
+      },
     });
   });
 
@@ -177,6 +180,7 @@ describe("Dashboard BFF", () => {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "X-Forwarded-For": expect.any(String),
       },
       body: JSON.stringify(body),
     });

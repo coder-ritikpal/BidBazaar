@@ -4,6 +4,7 @@ import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 
 const mockOrderModel = {
   find: jest.fn(),
+  countDocuments: jest.fn(),
 };
 
 jest.unstable_mockModule('../../../src/models/order.model.js', () => ({
@@ -45,9 +46,15 @@ describe('getMyOrders Controller', () => {
     ];
 
     mockOrderModel.find.mockReturnValue({
-      sort: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockResolvedValue(mockOrders),
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue(mockOrders),
+          }),
+        }),
+      }),
     });
+    mockOrderModel.countDocuments.mockResolvedValue(1);
 
     await getMyOrders(req, res);
 
@@ -60,6 +67,12 @@ describe('getMyOrders Controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       message: 'Orders fetched successfully.',
       orders: mockOrders,
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
     });
   });
 
@@ -77,9 +90,15 @@ describe('getMyOrders Controller', () => {
 
   it('should return an empty array if user has no orders', async () => {
     mockOrderModel.find.mockReturnValue({
-      sort: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockResolvedValue([]),
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
     });
+    mockOrderModel.countDocuments.mockResolvedValue(0);
 
     await getMyOrders(req, res);
 
@@ -88,6 +107,12 @@ describe('getMyOrders Controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       message: 'Orders fetched successfully.',
       orders: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+      },
     });
   });
 

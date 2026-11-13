@@ -18,7 +18,10 @@ import {
 /**
  * Fetch all products, automatically approving reviews that have ended.
  */
-export const getProducts = async () => {
+export const getProducts = async ({ page = 1, limit = 10 } = {}) => {
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(limit, 10) || 10));
+
   await productModel.updateMany(
     {
       reviewStatus: "under_review",
@@ -29,23 +32,39 @@ export const getProducts = async () => {
     },
   );
 
-  const products = await productModel
-    .find({})
-    .sort({ createdAt: -1 })
-    .lean();
+  const [products, total] = await Promise.all([
+    productModel
+      .find({})
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    productModel.countDocuments({}),
+  ]);
 
-  return products.map(toProductResponse);
+  return {
+    products: products.map(toProductResponse),
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
 };
 
 /**
  * Fetch all products belonging to a specific seller.
  */
-export const getSellerProducts = async (sellerId) => {
+export const getSellerProducts = async (sellerId, { page = 1, limit = 10 } = {}) => {
   if (!sellerId) {
     const error = new Error("Unauthorized");
     error.statusCode = 401;
     throw error;
   }
+
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(limit, 10) || 10));
 
   await productModel.updateMany(
     {
@@ -58,12 +77,26 @@ export const getSellerProducts = async (sellerId) => {
     },
   );
 
-  const products = await productModel
-    .find({ sellerId })
-    .sort({ createdAt: -1 })
-    .lean();
+  const filter = { sellerId };
+  const [products, total] = await Promise.all([
+    productModel
+      .find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    productModel.countDocuments(filter),
+  ]);
 
-  return products.map(toProductResponse);
+  return {
+    products: products.map(toProductResponse),
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
 };
 
 /**

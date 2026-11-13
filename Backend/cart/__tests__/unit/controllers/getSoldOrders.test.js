@@ -4,6 +4,7 @@ import { jest, describe, beforeEach, it, expect } from '@jest/globals';
 
 const mockOrderModel = {
   find: jest.fn(),
+  countDocuments: jest.fn(),
 };
 
 jest.unstable_mockModule('../../../src/models/order.model.js', () => ({
@@ -48,9 +49,15 @@ describe('getSoldOrders Controller', () => {
     ];
 
     mockOrderModel.find.mockReturnValue({
-      sort: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockResolvedValue(soldOrders),
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue(soldOrders),
+          }),
+        }),
+      }),
     });
+    mockOrderModel.countDocuments.mockResolvedValue(2);
 
     await getSoldOrders(req, res);
 
@@ -66,6 +73,12 @@ describe('getSoldOrders Controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       message: 'Sold orders fetched successfully.',
       orders: soldOrders,
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 2,
+        totalPages: 1,
+      },
     });
   });
 
@@ -83,9 +96,15 @@ describe('getSoldOrders Controller', () => {
 
   it('should return an empty array when seller has no sold orders', async () => {
     mockOrderModel.find.mockReturnValue({
-      sort: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockResolvedValue([]),
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            lean: jest.fn().mockResolvedValue([]),
+          }),
+        }),
+      }),
     });
+    mockOrderModel.countDocuments.mockResolvedValue(0);
 
     await getSoldOrders(req, res);
 
@@ -94,14 +113,26 @@ describe('getSoldOrders Controller', () => {
     expect(res.json).toHaveBeenCalledWith({
       message: 'Sold orders fetched successfully.',
       orders: [],
+      pagination: {
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 0,
+      },
     });
   });
 
   it('should return 500 if database throws an error', async () => {
     mockOrderModel.find.mockReturnValue({
-      sort: jest.fn().mockReturnThis(),
-      lean: jest.fn().mockRejectedValue(new Error('Database Error')),
+      sort: jest.fn().mockReturnValue({
+        skip: jest.fn().mockReturnValue({
+          limit: jest.fn().mockReturnValue({
+            lean: jest.fn().mockRejectedValue(new Error('Database Error')),
+          }),
+        }),
+      }),
     });
+    mockOrderModel.countDocuments.mockResolvedValue(0);
 
     await getSoldOrders(req, res);
 

@@ -6,12 +6,13 @@ export { toProductResponse };
 
 const getSellerId = (req) => req.user?.id || req.user?._id;
 
-export const getProducts = async (_req, res) => {
+export const getProducts = async (req, res) => {
   try {
-    const products = await productService.getProducts();
+    const { products, pagination } = await productService.getProducts(req.query);
     res.status(200).json({
       message: "Products fetched successfully",
       products,
+      pagination,
     });
   } catch (error) {
     res.status(500).json({
@@ -23,11 +24,12 @@ export const getProducts = async (_req, res) => {
 export const getSellerProducts = async (req, res) => {
   try {
     const sellerId = getSellerId(req);
-    const products = await productService.getSellerProducts(sellerId);
+    const { products, pagination } = await productService.getSellerProducts(sellerId, req.query);
 
     res.status(200).json({
       message: "Seller products fetched successfully",
       products,
+      pagination,
     });
   } catch (error) {
     if (error.statusCode === 401) {

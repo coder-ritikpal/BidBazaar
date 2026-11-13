@@ -151,6 +151,9 @@ export const bidOnAuctionBFF = async (req, res) => {
 export const getListedItems = async (req, res) => {
   try {
     const url = new URL("/api/products/seller", config.INVENTORY_SERVICE_URL);
+    for (const [key, value] of Object.entries(req.query || {})) {
+      url.searchParams.set(key, value);
+    }
     const data = await forwardRequest(req, url);
     return res.status(200).json(data);
   } catch (error) {
@@ -210,6 +213,9 @@ export const deleteProductBFF = async (req, res) => {
 export const getSoldItems = async (req, res) => {
   try {
     const url = new URL("/api/orders/sold", config.CART_SERVICE_URL);
+    for (const [key, value] of Object.entries(req.query || {})) {
+      url.searchParams.set(key, value);
+    }
     const data = await forwardRequest(req, url);
     return res.status(200).json(data);
   } catch (error) {
@@ -220,6 +226,9 @@ export const getSoldItems = async (req, res) => {
 export const getMyOrders = async (req, res) => {
   try {
     const url = new URL("/api/orders/my-orders", config.CART_SERVICE_URL);
+    for (const [key, value] of Object.entries(req.query || {})) {
+      url.searchParams.set(key, value);
+    }
     const data = await forwardRequest(req, url);
     return res.status(200).json(data);
   } catch (error) {

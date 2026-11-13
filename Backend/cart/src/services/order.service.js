@@ -5,17 +5,26 @@ import { fetchAuctionFromService } from "./auctionClient.service.js";
 /**
  * Fetches all orders won by the authenticated buyer, backfilling details if needed.
  */
-export const getMyOrders = async (userId) => {
+export const getMyOrders = async (userId, { page = 1, limit = 10 } = {}) => {
   if (!userId) {
     const error = new Error("Unauthorized. Please log in.");
     error.statusCode = 401;
     throw error;
   }
 
-  const ordersFromDb = await orderModel
-    .find({ winnerId: userId })
-    .sort({ createdAt: -1 })
-    .lean();
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(limit, 10) || 10));
+
+  const filter = { winnerId: userId };
+  const [ordersFromDb, total] = await Promise.all([
+    orderModel
+      .find(filter)
+      .sort({ createdAt: -1, _id: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    orderModel.countDocuments(filter),
+  ]);
 
   const orders = await Promise.all(
     ordersFromDb.map(async (order) => {
@@ -32,12 +41,22 @@ export const getMyOrders = async (userId) => {
         return { ...order, itemDetails };
       } catch (fetchError) {
         console.error(`Could not backfill details for order ${order._id}:`, fetchError.message);
-        return { ...order, itemDetails: { title: "Item details not available", image: null } };
+        const fallbackDetails = { title: "Item details not available", image: null };
+        await orderModel.updateOne({ _id: order._id }, { $set: { itemDetails: fallbackDetails } }).catch(() => {});
+        return { ...order, itemDetails: fallbackDetails };
       }
     }),
   );
 
-  return orders;
+  return {
+    orders,
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
 };
 
 /**
@@ -69,19 +88,36 @@ export const getOrderById = async (orderId, userId) => {
 /**
  * Fetches all sold orders for the authenticated seller.
  */
-export const getSoldOrders = async (userId) => {
+export const getSoldOrders = async (userId, { page = 1, limit = 10 } = {}) => {
   if (!userId) {
     const error = new Error("Unauthorized. Please log in.");
     error.statusCode = 401;
     throw error;
   }
 
-  const soldOrders = await orderModel
-    .find({ sellerId: userId, status: { $in: ["paid", "shipped", "delivered"] } })
-    .sort({ updatedAt: -1 })
-    .lean();
+  const pageNumber = Math.max(1, Number.parseInt(page, 10) || 1);
+  const pageSize = Math.min(100, Math.max(10, Number.parseInt(limit, 10) || 10));
 
-  return soldOrders;
+  const filter = { sellerId: userId, status: { $in: ["paid", "shipped", "delivered"] } };
+  const [soldOrders, total] = await Promise.all([
+    orderModel
+      .find(filter)
+      .sort({ updatedAt: -1, _id: -1 })
+      .skip((pageNumber - 1) * pageSize)
+      .limit(pageSize)
+      .lean(),
+    orderModel.countDocuments(filter),
+  ]);
+
+  return {
+    orders: soldOrders,
+    pagination: {
+      page: pageNumber,
+      limit: pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize),
+    },
+  };
 };
 
 /**
