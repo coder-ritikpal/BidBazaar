@@ -7,7 +7,8 @@
     "dev": "npm run dev --prefix Backend",
     "dev:backend": "npm run dev --prefix Backend",
     "dev:frontend": "npm run dev --prefix Frontend",
-    "test": "npm test --prefix Backend"
+    "test": "npm test --prefix Backend",
+    "verify": "npm test && npm run lint --prefix Frontend && npm run build --prefix Frontend"
   }
 }
 
