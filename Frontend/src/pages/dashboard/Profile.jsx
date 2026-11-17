@@ -121,7 +121,7 @@ const Profile = () => {
             )}
 
             {/* Edit/Save/Cancel Buttons - These will now control the single form below */}
-            <div className="mt-6 sm:mt-0 flex-shrink-0">
+            <div className="mt-6 sm:mt-0 shrink-0">
               {isEditing ? (
                 <div className="flex gap-2">
                   <button type="submit" form="profile-form" className={styles.saveButton} disabled={loading || !!phoneError}> {/* Disable if loading or phoneError exists */}
