@@ -79,23 +79,7 @@ export default tseslint.config(
       "import/namespace": "error",
       "import/default": "error",
       "import/export": "error",
-      "import/order": [
-        "warn",
-        {
-          "groups": ["builtin", "external", "internal", "parent", "sibling", "index"],
-          "pathGroups": [
-            {
-              "pattern": "@/**",
-              "group": "internal"
-            }
-          ],
-          "newlines-between": "always",
-          "alphabetize": {
-            "order": "asc",
-            "caseInsensitive": true
-          }
-        }
-      ]
+      "import/order": "off",
     },
   },
   {
