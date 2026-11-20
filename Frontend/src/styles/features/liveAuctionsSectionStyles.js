@@ -14,5 +14,7 @@ export const getLiveAuctionsSectionStyles = (theme) => {
     auctionTime: `px-4 pb-4 text-sm mt-auto ${isDark ? 'text-gray-400' : 'text-gray-500'}`,
     statusBadge: `absolute top-2 left-2 z-10 px-2.5 py-1 text-xs font-bold text-white rounded-md shadow`,
     seeMoreButton: `inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl transition-all duration-300 hover:scale-105 ${isDark ? 'text-purple-300 bg-purple-800/50 hover:bg-purple-700/50' : 'bg-purple-100 text-purple-700 hover:bg-purple-200'}`,
+    listYourItemButton: `inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl transition-all duration-300 hover:scale-105 shadow-md ${isDark ? 'text-white bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-900/30' : 'text-white bg-linear-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-purple-500/20'}`,
+    buttonsWrapper: `flex flex-wrap items-center justify-center gap-4 mt-8`,
   };
 };

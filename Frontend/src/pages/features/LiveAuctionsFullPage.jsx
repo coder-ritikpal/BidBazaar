@@ -215,7 +215,9 @@ const LiveAuctionsFullPage = () => { // Renamed component
                   <div className={classes.cardContent}>
                     <h3 className={classes.cardTitle}>{auction.title}</h3>
                     <div className={classes.bidInfo}>
-                      <p className={classes.currentBidLabel}>Current Bid:</p>
+                      <p className={classes.currentBidLabel}>
+                        {auction.status === 'ended' ? 'Final Bid:' : auction.status === 'upcoming' ? 'Starting Bid:' : 'Current Bid:'}
+                      </p>
                       <p className={classes.currentBidValue}>Rs.{auction.currentPrice}</p>
                     </div>
                     <p className={classes.auctionTimeRemaining}>{getAuctionTimeLabel(auction)}</p>

@@ -263,13 +263,37 @@ export const getAuctions = async ({ page = 1, limit = 50 } = {}) => {
       },
     ],
   };
-  const [auctions, total] = await Promise.all([
+  let [auctions, total] = await Promise.all([
     auctionModel.find(filter)
       .sort({ createdAt: -1, _id: -1 })
       .skip((pageNumber - 1) * pageSize)
       .limit(pageSize),
     auctionModel.countDocuments(filter),
   ]);
+
+  // If page 1 has fewer than MIN_AUCTIONS (e.g. all auctions ended, even > 3 weeks ago),
+  // backfill with the most recently ended auctions so featured/home views never appear empty.
+  const MIN_AUCTIONS = 4;
+  if (pageNumber === 1 && auctions.length < MIN_AUCTIONS) {
+    const existingIdSet = new Set(auctions.map((a) => String(a._id)));
+    const needed = MIN_AUCTIONS - auctions.length;
+    const fallbackResults = await auctionModel.find({
+      cancelledAt: null,
+      _id: { $nin: Array.from(existingIdSet) },
+    })
+      .sort({ endAuctionAt: -1, createdAt: -1, _id: -1 })
+      .skip(0)
+      .limit(needed);
+
+    const uniqueFallbacks = (fallbackResults || []).filter(
+      (a) => a && a._id && !existingIdSet.has(String(a._id))
+    );
+
+    if (uniqueFallbacks.length > 0) {
+      auctions = [...auctions, ...uniqueFallbacks];
+      total = Math.max(total, auctions.length);
+    }
+  }
 
   const processedAuctions = await Promise.all(auctions.map(toAuctionResponse));
   const result = {

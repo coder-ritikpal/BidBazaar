@@ -36,11 +36,7 @@ export const getAuctionStatus = (auction, now = Date.now()) => {
     return 'live';
   }
 
-  if (now <= endTime.getTime() + ENDED_VISIBILITY_WINDOW_MS) {
-    return 'ended';
-  }
-
-  return 'expired';
+  return 'ended';
 };
 
 export const normalizeAuction = (auction, now = Date.now()) => {
