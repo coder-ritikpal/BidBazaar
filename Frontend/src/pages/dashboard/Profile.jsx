@@ -22,26 +22,24 @@ const Profile = () => {
   });
   const [phoneError, setPhoneError] = useState(''); // State for phone number validation error
 
-  // Fallback data if user is not fully populated
-  const userData = user || {};
-  const email = userData.email || 'No email provided';
+  const email = user?.email || 'No email provided';
 
   useEffect(() => {
     // Initialize formData with current user data when component mounts or user data changes
     // Also re-initialize if isEditing state changes to ensure fresh data
-    if (userData) {
-      setFormData({
-        firstName: userData.fullName?.firstName || '', // Use optional chaining for robustness
-        lastName: userData.fullName?.lastName || '',   // Use optional chaining for robustness
-        phoneNumber: userData.phoneNumber || '',
-        address: userData.address || '',
-        city: userData.city || '',
-        state: userData.state || '',
-        zipCode: userData.zipCode || '',
-        country: userData.country || '',
-      });
-    }
-  }, [userData, isEditing]);
+    if (!user) return;
+
+    setFormData({
+      firstName: user.fullName?.firstName || '', // Use optional chaining for robustness
+      lastName: user.fullName?.lastName || '',   // Use optional chaining for robustness
+      phoneNumber: user.phoneNumber || '',
+      address: user.address || '',
+      city: user.city || '',
+      state: user.state || '',
+      zipCode: user.zipCode || '',
+      country: user.country || '',
+    });
+  }, [user, isEditing]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
