@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useThemeStore } from '@/store/themeStore';
 import { getLiveAuctionsSectionStyles } from '@/styles/features/liveAuctionsSectionStyles'; // Corrected import
-import { ArrowRight, Heart } from 'lucide-react';
+import { ArrowRight, Heart, PlusCircle } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'react-toastify';
 import { useAuctionStore } from "@/store/auctionStore";
@@ -184,16 +184,21 @@ const LiveAuctionsSection = ({ selectedCategory }) => {
                 </button>
                 <img src={auction.images?.[0]?.url || auction.image} alt={auction.title} className={classes.auctionImage} loading="lazy" />
                 <h3 className={classes.auctionTitle}>{auction.title}</h3>
-                <p className={classes.auctionPrice}>Current Bid: Rs.{auction.currentPrice}</p>
+                <p className={classes.auctionPrice}>
+                  {auction.status === 'ended' ? 'Final Bid: Rs.' : auction.status === 'upcoming' ? 'Starting Bid: Rs.' : 'Current Bid: Rs.'}{auction.currentPrice}
+                </p>
                 <p className={classes.auctionTime}>{getAuctionTimeLabel(auction)}</p>
               </Link>
             )})}
         </div>
       )}
 
-      <div className="text-center mt-8">
+      <div className={classes.buttonsWrapper}>
         <Link to="/auctions" className={classes.seeMoreButton}>
           See All Auctions <ArrowRight className="ml-2 w-5 h-5" />
+        </Link>
+        <Link to="/start-selling" className={classes.listYourItemButton}>
+          <PlusCircle className="mr-2 w-5 h-5" /> List Your Item
         </Link>
       </div>
     </div>
